@@ -23,7 +23,7 @@ A full-stack appointment booking and queue management system.
 
 ```bash
 # Install Node dependencies
-npm install
+yarn
 
 # Setup Python virtual environment
 cd apps/api
@@ -45,13 +45,13 @@ cp apps/api/.env.example apps/api/.env
 
 ```bash
 # Run both frontend and backend
-npm run dev
+yarn dev
 
 # Frontend only (http://localhost:5173)
-npm run dev --filter=web
+yarn dev --filter=web
 
 # Backend only (http://localhost:8000)
-npm run dev --filter=api
+yarn dev --filter=api
 ```
 
 ### API Health Check
