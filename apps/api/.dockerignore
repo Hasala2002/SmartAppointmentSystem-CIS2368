@@ -1,0 +1,17 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+ENV/
+.venv
+*.env
+.env
+.env.local
+node_modules/
+.git
+.gitignore
+*.md
+.DS_Store
