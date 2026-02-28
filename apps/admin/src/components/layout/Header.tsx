@@ -8,42 +8,48 @@ import {
   Avatar,
   Indicator,
   Paper,
-  useMantineTheme
-} from '@mantine/core'
-import { useState } from 'react'
-import { Notifications, LogOut } from 'react-ionicons'
-import { LOCATIONS } from '../../types'
-import { useAuthStore } from '../../stores/authStore'
+  useMantineTheme,
+  Image,
+} from "@mantine/core";
+import { useState } from "react";
+import { Notifications, LogOut } from "react-ionicons";
+import { LOCATIONS } from "../../types";
+import { useAuthStore } from "../../stores/authStore";
 
 interface HeaderProps {
-  opened: boolean
-  toggle: () => void
+  opened: boolean;
+  toggle: () => void;
 }
 
 export function Header({ opened, toggle }: HeaderProps) {
-  const theme = useMantineTheme()
-  const [selectedLocation, setSelectedLocation] = useState<string | null>('all')
-  const logout = useAuthStore((state) => state.logout)
+  const theme = useMantineTheme();
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(
+    "all",
+  );
+  const logout = useAuthStore((state) => state.logout);
 
   const locationOptions = [
-    { value: 'all', label: 'All Locations' },
-    ...LOCATIONS.map((loc) => ({ value: loc.id, label: loc.name }))
-  ]
+    { value: "all", label: "All Locations" },
+    ...LOCATIONS.map((loc) => ({ value: loc.id, label: loc.name })),
+  ];
 
   const handleLogout = () => {
-    logout()
+    logout();
     // Navigate to login in the future
-    console.log('Logging out...')
-  }
+    console.log("Logging out...");
+  };
 
   return (
     <Group h="100%" px="md" justify="space-between">
       {/* Left Side */}
       <Group gap={0}>
         <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-        <Text fw={600} size="lg" ml="md">
-          Smile Dental Admin
-        </Text>
+        <Group gap="sm">
+          <Image src="/logo.png" alt="Lone Star Dental Logo" h={25} w={25} fit="contain" />
+          <Text fw={600} size="lg">
+            Lone Star Dental Admin
+          </Text>
+        </Group>
       </Group>
 
       {/* Center - Location Selector */}
@@ -78,12 +84,15 @@ export function Header({ opened, toggle }: HeaderProps) {
           <Menu.Dropdown>
             <Menu.Item disabled>Admin Profile</Menu.Item>
             <Menu.Divider />
-            <Menu.Item onClick={handleLogout} leftSection={<LogOut size="16px" />}>
+            <Menu.Item
+              onClick={handleLogout}
+              leftSection={<LogOut size="16px" />}
+            >
               Logout
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
       </Group>
     </Group>
-  )
+  );
 }

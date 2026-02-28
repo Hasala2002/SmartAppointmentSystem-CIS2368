@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 
 app = FastAPI(
-    title="Smile Dental API",
+    title="Lone Star Dental API",
     description="Appointment & Queue Management System API",
     version="1.0.0",
     docs_url="/docs",

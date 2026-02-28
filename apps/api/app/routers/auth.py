@@ -42,8 +42,8 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
     await db.refresh(user)
     
     # Generate tokens
-    access_token = create_access_token(str(user.id))
-    refresh_token = create_refresh_token(str(user.id))
+    access_token = create_access_token({"sub": str(user.id)})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
     
     return TokenResponse(
         access_token=access_token,
@@ -72,8 +72,8 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
         )
     
     # Generate tokens
-    access_token = create_access_token(str(user.id))
-    refresh_token = create_refresh_token(str(user.id))
+    access_token = create_access_token({"sub": str(user.id)})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
     
     return TokenResponse(
         access_token=access_token,
@@ -103,8 +103,8 @@ async def refresh(request: RefreshRequest, db: AsyncSession = Depends(get_db)):
             detail="User not found or inactive"
         )
     
-    access_token = create_access_token(str(user.id))
-    refresh_token = create_refresh_token(str(user.id))
+    access_token = create_access_token({"sub": str(user.id)})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
     
     return TokenResponse(
         access_token=access_token,

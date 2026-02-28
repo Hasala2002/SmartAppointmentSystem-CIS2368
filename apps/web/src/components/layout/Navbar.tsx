@@ -1,23 +1,44 @@
-import { Group, Button, Menu, Avatar, Container, Box } from '@mantine/core'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../hooks/useAuth'
+import { Group, Button, Menu, Avatar, Container, Box, Image, Text } from "@mantine/core";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 export const Navbar = () => {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
+    logout();
+    navigate("/");
+  };
 
   return (
-    <Box component="nav" h={60} display="flex" style={{ alignItems: 'center', borderBottom: '1px solid #e9ecef', backgroundColor: 'white' }}>
-      <Container size="lg" h="100%" display="flex" style={{ alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-        <RouterLink to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ fontSize: 20, fontWeight: 'bold', color: 'teal' }}>
-            🦷 Smile Dental
-          </div>
+    <Box
+      component="nav"
+      h={60}
+      display="flex"
+      style={{
+        alignItems: "center",
+        borderBottom: "1px solid #e9ecef",
+        backgroundColor: "white",
+      }}
+    >
+      <Container
+        size="lg"
+        h="100%"
+        display="flex"
+        style={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+        }}
+      >
+        <RouterLink to="/" style={{ textDecoration: "none", color: "inherit" }}>
+          <Group gap="sm">
+            <Image src="/logo.png" alt="Lone Star Dental Logo" h={25} w={25} fit="contain" />
+            <Text style={{ fontSize: 20, fontWeight: "bold", color: "teal" }}>
+              Lone Star Dental
+            </Text>
+          </Group>
         </RouterLink>
 
         <Group gap="md">
@@ -31,7 +52,11 @@ export const Navbar = () => {
               </Button>
               <Menu>
                 <Menu.Target>
-                  <Avatar color="teal" radius="xl" style={{ cursor: 'pointer' }}>
+                  <Avatar
+                    color="teal"
+                    radius="xl"
+                    style={{ cursor: "pointer" }}
+                  >
                     {user.firstName[0]}
                     {user.lastName[0]}
                   </Avatar>
@@ -58,5 +83,5 @@ export const Navbar = () => {
         </Group>
       </Container>
     </Box>
-  )
-}
+  );
+};

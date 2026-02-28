@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Enum, DateTime
+from sqlalchemy import Column, String, Boolean, Enum, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
 import uuid
@@ -19,9 +19,9 @@ class User(Base):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     phone = Column(String, nullable=True)
-    role = Column(Enum(UserRole), nullable=False, default=UserRole.customer)
+    role = Column(Enum(UserRole, name="user_role"), nullable=False, default=UserRole.customer)
     is_active = Column(Boolean, nullable=False, default=True)
     email_verified = Column(Boolean, nullable=False, default=False)
     last_login_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, nullable=False)
-    updated_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())

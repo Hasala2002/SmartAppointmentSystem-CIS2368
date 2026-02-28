@@ -1,10 +1,30 @@
-import { Container, Group, Anchor, Text, Box } from '@mantine/core'
+import { Container, Group, Anchor, Text, Box } from "@mantine/core";
 
 export const Footer = () => {
   return (
-    <Box component="footer" h={60} display="flex" style={{ alignItems: 'center', borderTop: '1px solid #e9ecef', backgroundColor: 'white' }}>
-      <Container size="lg" h="100%" display="flex" style={{ alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-        <Text size="sm">© 2026 Smile Dental Group. All rights reserved.</Text>
+    <Box
+      component="footer"
+      h={60}
+      display="flex"
+      style={{
+        alignItems: "center",
+        borderTop: "1px solid #e9ecef",
+        backgroundColor: "white",
+      }}
+    >
+      <Container
+        size="lg"
+        h="100%"
+        display="flex"
+        style={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+        }}
+      >
+        <Text size="sm">
+          © 2026 Lone Star Dental Group. All rights reserved.
+        </Text>
         <Group gap="lg">
           <Anchor href="#" size="sm">
             About
@@ -18,5 +38,5 @@ export const Footer = () => {
         </Group>
       </Container>
     </Box>
-  )
-}
+  );
+};

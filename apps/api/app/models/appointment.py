@@ -24,7 +24,7 @@ class Appointment(Base):
     staff_id = Column(UUID(as_uuid=True), ForeignKey("staff.id", ondelete="SET NULL"), nullable=True)
     scheduled_start = Column(DateTime, nullable=False)
     scheduled_end = Column(DateTime, nullable=False)
-    status = Column(Enum(AppointmentStatus), nullable=False, default=AppointmentStatus.pending)
+    status = Column(Enum(AppointmentStatus, name="appointment_status"), nullable=False, default=AppointmentStatus.pending)
     check_in_time = Column(DateTime, nullable=True)
     actual_start_time = Column(DateTime, nullable=True)
     actual_end_time = Column(DateTime, nullable=True)

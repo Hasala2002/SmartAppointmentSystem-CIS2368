@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Smile Dental API - Sprint 1",
+    "name": "Lone Star Dental API - Sprint 1",
     "description": "Complete API collection for appointment management system",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -25,16 +25,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/auth/register",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "register"
-              ]
+              "path": ["api", "v1", "auth", "register"]
             }
           }
         },
@@ -55,16 +48,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/auth/login",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "login"
-              ]
+              "path": ["api", "v1", "auth", "login"]
             }
           }
         },
@@ -85,16 +71,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/auth/refresh",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "refresh"
-              ]
+              "path": ["api", "v1", "auth", "refresh"]
             }
           }
         },
@@ -112,16 +91,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/auth/me",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "me"
-              ]
+              "path": ["api", "v1", "auth", "me"]
             }
           }
         }
@@ -144,16 +116,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/users/profile",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "users",
-                "profile"
-              ]
+              "path": ["api", "v1", "users", "profile"]
             }
           }
         }
@@ -170,16 +135,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/locations/",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "locations",
-                ""
-              ]
+              "path": ["api", "v1", "locations", ""]
             }
           }
         },
@@ -191,16 +149,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/locations/{{location_id}}",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "locations",
-                "{{location_id}}"
-              ]
+              "path": ["api", "v1", "locations", "{{location_id}}"]
             }
           }
         },
@@ -212,17 +163,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/locations/slug/downtown",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "locations",
-                "slug",
-                "downtown"
-              ]
+              "path": ["api", "v1", "locations", "slug", "downtown"]
             }
           }
         }
@@ -239,16 +182,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/availability/slots?location_id={{location_id}}&date=2026-02-20",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "availability",
-                "slots"
-              ],
+              "path": ["api", "v1", "availability", "slots"],
               "query": [
                 {
                   "key": "location_id",
@@ -289,16 +225,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/appointments/",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "appointments",
-                ""
-              ]
+              "path": ["api", "v1", "appointments", ""]
             }
           }
         },
@@ -316,16 +245,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/appointments/",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "appointments",
-                ""
-              ]
+              "path": ["api", "v1", "appointments", ""]
             }
           }
         },
@@ -343,16 +265,9 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/appointments/{{appointment_id}}",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "api",
-                "v1",
-                "appointments",
-                "{{appointment_id}}"
-              ]
+              "path": ["api", "v1", "appointments", "{{appointment_id}}"]
             }
           }
         },
@@ -378,9 +293,7 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/appointments/{{appointment_id}}/reschedule",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
               "path": [
                 "api",
@@ -414,9 +327,7 @@
             "url": {
               "raw": "http://localhost:8000/api/v1/appointments/{{appointment_id}}/cancel",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
               "path": [
                 "api",
@@ -441,13 +352,9 @@
             "url": {
               "raw": "http://localhost:8000/health",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "8000",
-              "path": [
-                "health"
-              ]
+              "path": ["health"]
             }
           }
         }

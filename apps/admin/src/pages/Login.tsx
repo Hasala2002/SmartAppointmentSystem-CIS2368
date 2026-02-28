@@ -59,7 +59,7 @@ const Login = () => {
             />
           </Group>
           <Stack gap={0} style={{ textAlign: "center" }}>
-            <Title order={2}>Smile Dental</Title>
+            <Title order={2}>Lone Star Dental</Title>
             <Text c="dimmed" size="sm">
               Admin Portal
             </Text>

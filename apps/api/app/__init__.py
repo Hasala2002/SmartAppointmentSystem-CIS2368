@@ -1,1 +1,1 @@
-# Smile Dental API Package
+# Lone Star Dental API Package
