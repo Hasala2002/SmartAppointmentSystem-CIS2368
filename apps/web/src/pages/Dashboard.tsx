@@ -1,47 +1,44 @@
-import { Container, Title, Text, Button, Stack, Group, Tabs, Empty } from '@mantine/core'
+import { Container, Title, Text, Button, Stack, Tabs } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { AppointmentCard } from '../components/appointments/AppointmentCard'
-import { Appointment } from '../types'
+import { Appointment, PatientInfo } from '../types'
 import dayjs from 'dayjs'
+import { useEffect, useState } from 'react'
+import { listAppointmentsRequest, mapApiAppointment } from '../api/appointments'
 
-const DUMMY_APPOINTMENTS: Appointment[] = [
-  {
-    id: '1',
-    userId: '1',
-    locationId: '1',
-    date: dayjs().add(1, 'day').format('MMM DD, YYYY'),
-    time: '10:00 AM',
-    status: 'confirmed',
-    patientInfo: {
-      dateOfBirth: '1990-05-15',
-      hasInsurance: 'yes',
-      lastDentalVisit: 'within-6-months',
-      hasDentalPain: 'no',
-    },
-  },
-  {
-    id: '2',
-    userId: '1',
-    locationId: '2',
-    date: dayjs().subtract(7, 'days').format('MMM DD, YYYY'),
-    time: '2:00 PM',
-    status: 'completed',
-    patientInfo: {
-      dateOfBirth: '1990-05-15',
-      hasInsurance: 'yes',
-      lastDentalVisit: 'within-6-months',
-      hasDentalPain: 'no',
-    },
-  },
-]
+const DEFAULT_PATIENT_INFO: PatientInfo = {
+  dateOfBirth: '',
+  hasInsurance: 'no',
+  lastDentalVisit: 'never',
+  hasDentalPain: 'no',
+}
 
 export const Dashboard = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const upcoming = DUMMY_APPOINTMENTS.filter(apt => new Date(apt.date) >= new Date())
-  const past = DUMMY_APPOINTMENTS.filter(apt => new Date(apt.date) < new Date())
+  useEffect(() => {
+    const loadAppointments = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const apiAppointments = await listAppointmentsRequest()
+        setAppointments(apiAppointments.map((appt) => mapApiAppointment(appt, DEFAULT_PATIENT_INFO)))
+      } catch {
+        setError('Unable to load appointments right now.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    void loadAppointments()
+  }, [])
+
+  const upcoming = appointments.filter((apt) => dayjs(apt.scheduledStart).isAfter(dayjs()))
+  const past = appointments.filter((apt) => !dayjs(apt.scheduledStart).isAfter(dayjs()))
 
   return (
     <Container size="lg" py="xl">
@@ -71,6 +68,8 @@ export const Dashboard = () => {
           </Tabs.List>
 
           <Tabs.Panel value="upcoming" pt="lg">
+            {isLoading && <Text c="dimmed">Loading appointments...</Text>}
+            {error && <Text c="red">{error}</Text>}
             {upcoming.length > 0 ? (
               <Stack gap="md">
                 {upcoming.map((apt) => (
@@ -88,6 +87,8 @@ export const Dashboard = () => {
           </Tabs.Panel>
 
           <Tabs.Panel value="past" pt="lg">
+            {isLoading && <Text c="dimmed">Loading appointments...</Text>}
+            {error && <Text c="red">{error}</Text>}
             {past.length > 0 ? (
               <Stack gap="md">
                 {past.map((apt) => (

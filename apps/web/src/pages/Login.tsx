@@ -4,7 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate, Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { User } from '../types'
+import { loginRequest, mapApiUser } from '../api/auth'
+import { useState } from 'react'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -16,22 +17,27 @@ type LoginFormData = z.infer<typeof loginSchema>
 export const Login = () => {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   })
-
-  const onSubmit = (data: LoginFormData) => {
-    // Create dummy user
-    const user: User = {
-      id: '1',
-      email: data.email,
-      firstName: data.email.split('@')[0],
-      lastName: 'User',
-      phone: '(555) 123-4567',
+  const onSubmit = async (data: LoginFormData) => {
+    setIsSubmitting(true)
+    setSubmitError(null)
+    try {
+      const response = await loginRequest({
+        email: data.email,
+        password: data.password,
+      })
+      const user = mapApiUser(response.user)
+      login(user, response.access_token, response.refresh_token)
+      navigate('/dashboard')
+    } catch {
+      setSubmitError('Unable to sign in. Please verify your credentials.')
+    } finally {
+      setIsSubmitting(false)
     }
-    
-    login(user)
-    navigate('/dashboard')
   }
 
   return (
@@ -60,9 +66,10 @@ export const Login = () => {
                 {...register('password')}
               />
 
-              <Button fullWidth type="submit">
-                Sign In
+              <Button fullWidth type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
+              {submitError && <span style={{ color: 'var(--mantine-color-red-6)' }}>{submitError}</span>}
             </Stack>
           </form>
 

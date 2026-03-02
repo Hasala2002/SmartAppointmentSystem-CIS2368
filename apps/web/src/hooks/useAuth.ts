@@ -1,5 +1,3 @@
-import { useAuthStore } from '../stores/authStore'
+import { useAuthStore, AuthState } from '../stores/authStore'
 
-export const useAuth = () => {
-  return useAuthStore()
-}
+export const useAuth = (): AuthState => useAuthStore()

@@ -6,11 +6,13 @@ from datetime import datetime
 class CreateAppointmentRequest(BaseModel):
     location_id: UUID
     scheduled_start: datetime
+    scheduled_end: datetime | None = None
     notes: str | None = None
 
 
 class RescheduleRequest(BaseModel):
     scheduled_start: datetime
+    scheduled_end: datetime | None = None
 
 
 class CancelRequest(BaseModel):
@@ -21,7 +23,6 @@ class AppointmentResponse(BaseModel):
     id: UUID
     location_id: UUID
     customer_id: UUID
-    staff_id: UUID | None
     scheduled_start: datetime
     scheduled_end: datetime
     status: str

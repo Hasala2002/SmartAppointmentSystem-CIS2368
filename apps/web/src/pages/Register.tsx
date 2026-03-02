@@ -4,7 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate, Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { User } from '../types'
+import { registerRequest, mapApiUser } from '../api/auth'
+import { useState } from 'react'
 
 const registerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -23,22 +24,29 @@ type RegisterFormData = z.infer<typeof registerSchema>
 export const Register = () => {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   })
-
-  const onSubmit = (data: RegisterFormData) => {
-    // Create dummy user
-    const user: User = {
-      id: Math.random().toString(),
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      phone: data.phone,
+  const onSubmit = async (data: RegisterFormData) => {
+    setIsSubmitting(true)
+    setSubmitError(null)
+    try {
+      const response = await registerRequest({
+        email: data.email,
+        password: data.password,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        phone: data.phone,
+      })
+      login(mapApiUser(response.user), response.access_token, response.refresh_token)
+      navigate('/dashboard')
+    } catch {
+      setSubmitError('Unable to create account. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
-    
-    login(user)
-    navigate('/dashboard')
   }
 
   return (
@@ -95,9 +103,10 @@ export const Register = () => {
                 {...register('confirmPassword')}
               />
 
-              <Button fullWidth type="submit">
+              <Button fullWidth type="submit" disabled={isSubmitting}>
                 Create Account
               </Button>
+              {submitError && <span style={{ color: 'var(--mantine-color-red-6)' }}>{submitError}</span>}
             </Stack>
           </form>
 

@@ -1,4 +1,4 @@
-import { MantineProvider, Box } from "@mantine/core";
+import { MantineProvider, Box, createTheme } from "@mantine/core";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "@mantine/core/styles.css";
 import { Navbar } from "./components/layout/Navbar";
@@ -11,7 +11,7 @@ import { BookingFlow } from "./pages/BookingFlow";
 import { AppointmentDetails } from "./pages/AppointmentDetails";
 import "@mantine/dates/styles.css";
 
-const theme = {
+const theme = createTheme({
   primaryColor: "teal",
   fontFamily:
     '"Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -33,9 +33,20 @@ const theme = {
       "#2faaa7",
       "#249695",
       "#098586",
+    ] as [
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string,
+      string
     ],
   },
-};
+});
 
 function App() {
   return (

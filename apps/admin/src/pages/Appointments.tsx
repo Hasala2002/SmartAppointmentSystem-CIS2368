@@ -1,11 +1,11 @@
 import { Stack, Paper, Group, TextInput, MultiSelect, Button } from '@mantine/core'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/common/PageHeader'
 import { AppointmentsTable } from '../components/appointments/AppointmentsTable'
 import { AppointmentModal } from '../components/appointments/AppointmentModal'
-import { mockAppointments } from '../data/mockData'
 import { Appointment, AppointmentStatus } from '../types'
+import { listAppointmentsRequest } from '../api/appointments'
 import { Search, Download } from 'react-ionicons'
 
 const STATUS_OPTIONS = [
@@ -24,9 +24,18 @@ export function Appointments() {
   const [selectedStatuses, setSelectedStatuses] = useState<AppointmentStatus[]>([])
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [modalOpened, setModalOpened] = useState(false)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+
+  useEffect(() => {
+    const loadAppointments = async () => {
+      const data = await listAppointmentsRequest()
+      setAppointments(data)
+    }
+    void loadAppointments()
+  }, [])
 
   // Filter appointments
-  const filteredAppointments = mockAppointments.filter((apt) => {
+  const filteredAppointments = appointments.filter((apt) => {
     const matchesSearch = apt.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       apt.patientEmail.toLowerCase().includes(searchQuery.toLowerCase())
 
@@ -37,7 +46,7 @@ export function Appointments() {
   })
 
   const handleRowClick = (id: string) => {
-    const appointment = mockAppointments.find((apt) => apt.id === id)
+    const appointment = appointments.find((apt) => apt.id === id)
     setSelectedAppointment(appointment || null)
     setModalOpened(true)
   }

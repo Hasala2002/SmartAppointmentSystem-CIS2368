@@ -12,18 +12,43 @@ import {
   ThemeIcon
 } from '@mantine/core'
 import { useParams, useNavigate } from 'react-router-dom'
-import { mockAppointments } from '../data/mockData'
+import { useEffect, useState } from 'react'
+import { getAppointmentRequest } from '../api/appointments'
 import { StatusBadge } from '../components/appointments/StatusBadge'
-import { PageHeader } from '../components/common/PageHeader'
 import { EmptyState } from '../components/common/EmptyState'
+import { Appointment } from '../types'
 import dayjs from 'dayjs'
 import { ArrowBack, Checkmark, Close } from 'react-ionicons'
 
 export function AppointmentDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [appointment, setAppointment] = useState<Appointment | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const appointment = mockAppointments.find((apt) => apt.id === id)
+  useEffect(() => {
+    const loadAppointment = async () => {
+      if (!id) return
+      setIsLoading(true)
+      try {
+        const data = await getAppointmentRequest(id)
+        setAppointment(data)
+      } catch {
+        setAppointment(null)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    void loadAppointment()
+  }, [id])
+
+  if (isLoading) {
+    return (
+      <Stack>
+        <Text size="sm" c="dimmed">Loading appointment...</Text>
+      </Stack>
+    )
+  }
 
   if (!appointment) {
     return (

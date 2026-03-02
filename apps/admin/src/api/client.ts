@@ -1,24 +1,34 @@
 import axios from 'axios'
 
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: 'http://localhost:8000/api/v1',
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 })
 
-// Placeholder for future request/response interceptors
 apiClient.interceptors.request.use((config) => {
-  // Add auth token in the future
+  const raw = localStorage.getItem('admin-auth-store')
+  if (!raw) return config
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      state?: { accessToken?: string | null }
+    }
+    const token = parsed.state?.accessToken
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  } catch {
+    // ignore malformed persisted state
+  }
+
   return config
 })
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Handle errors globally in the future
-    return Promise.reject(error)
-  }
+  (error) => Promise.reject(error)
 )
 
 export default apiClient

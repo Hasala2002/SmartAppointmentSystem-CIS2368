@@ -9,7 +9,6 @@ class Availability(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id", ondelete="CASCADE"), nullable=False)
-    staff_id = Column(UUID(as_uuid=True), ForeignKey("staff.id", ondelete="CASCADE"), nullable=True)
     day_of_week = Column(Integer, nullable=False)  # 0=Sunday, 6=Saturday
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)

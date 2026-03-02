@@ -2,15 +2,17 @@ import { Stack, Text, Group, Button, Select, Radio, Textarea } from '@mantine/co
 import { DateInput } from '@mantine/dates'
 import { UseFormReturn } from 'react-hook-form'
 import { PatientInfo } from '../../types'
-import { faker } from '@faker-js/faker'
+import dayjs from 'dayjs'
 
 interface PatientFormProps {
-  form: UseFormReturn<PatientInfo>
+  form: UseFormReturn<Partial<PatientInfo>>
   onDemoFill: () => void
 }
 
 export const PatientForm = ({ form, onDemoFill }: PatientFormProps) => {
-  const { register, setValue, watch } = form
+  const insurance = form.watch('hasInsurance')
+  const lastDentalVisit = form.watch('lastDentalVisit')
+  const hasDentalPain = form.watch('hasDentalPain')
 
   return (
     <Stack gap="lg">
@@ -23,15 +25,14 @@ export const PatientForm = ({ form, onDemoFill }: PatientFormProps) => {
         </Button>
       </Group>
 
-      {/* Date of Birth */}
       <DateInput
         label="Date of Birth"
         placeholder="Select your date of birth"
         maxDate={new Date()}
-        {...register('dateOfBirth')}
+        value={form.watch('dateOfBirth') ? dayjs(form.watch('dateOfBirth')).toDate() : null}
+        onChange={(date) => form.setValue('dateOfBirth', date ? dayjs(date).format('YYYY-MM-DD') : '')}
       />
 
-      {/* Insurance */}
       <Select
         label="Do you have dental insurance?"
         placeholder="Select an option"
@@ -39,10 +40,10 @@ export const PatientForm = ({ form, onDemoFill }: PatientFormProps) => {
           { value: 'yes', label: 'Yes' },
           { value: 'no', label: 'No' },
         ]}
-        {...register('hasInsurance')}
+        value={insurance}
+        onChange={(value) => form.setValue('hasInsurance', (value as PatientInfo['hasInsurance']) ?? 'no')}
       />
 
-      {/* Last Dental Visit */}
       <Select
         label="When was your last dental visit?"
         placeholder="Select a timeframe"
@@ -52,13 +53,16 @@ export const PatientForm = ({ form, onDemoFill }: PatientFormProps) => {
           { value: 'over-a-year', label: 'Over a year' },
           { value: 'never', label: 'Never' },
         ]}
-        {...register('lastDentalVisit')}
+        value={lastDentalVisit}
+        onChange={(value) =>
+          form.setValue('lastDentalVisit', (value as PatientInfo['lastDentalVisit']) ?? 'never')
+        }
       />
 
-      {/* Dental Pain */}
       <Radio.Group
         label="Are you currently experiencing any dental pain?"
-        {...register('hasDentalPain')}
+        value={hasDentalPain}
+        onChange={(value) => form.setValue('hasDentalPain', value as PatientInfo['hasDentalPain'])}
       >
         <Stack gap="sm">
           <Radio value="yes" label="Yes" />
@@ -66,18 +70,18 @@ export const PatientForm = ({ form, onDemoFill }: PatientFormProps) => {
         </Stack>
       </Radio.Group>
 
-      {/* Allergies */}
       <Textarea
         label="Do you have any allergies to medications? (Optional)"
         placeholder="List any medication allergies..."
-        {...register('allergies')}
+        value={form.watch('allergies') ?? ''}
+        onChange={(e) => form.setValue('allergies', e.currentTarget.value)}
       />
 
-      {/* Additional Notes */}
       <Textarea
         label="Any additional notes for the dentist? (Optional)"
         placeholder="Anything else the dentist should know..."
-        {...register('additionalNotes')}
+        value={form.watch('additionalNotes') ?? ''}
+        onChange={(e) => form.setValue('additionalNotes', e.currentTarget.value)}
       />
     </Stack>
   )

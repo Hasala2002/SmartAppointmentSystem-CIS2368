@@ -1,6 +1,6 @@
-import { Container, Stack, Stepper, Button, Group, Title } from '@mantine/core'
+import { Container, Stack, Stepper, Button, Group, Title, Text } from '@mantine/core'
 import { DateInput } from '@mantine/dates'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,9 +9,11 @@ import { LocationPicker } from '../components/booking/LocationPicker'
 import { TimeSlotPicker } from '../components/booking/TimeSlotPicker'
 import { PatientForm } from '../components/booking/PatientForm'
 import { BookingSummary } from '../components/booking/BookingSummary'
-import { PatientInfo } from '../types'
+import { ApiTimeSlot, Location, PatientInfo } from '../types'
 import { faker } from '@faker-js/faker'
 import dayjs from 'dayjs'
+import { getAvailableSlotsRequest, listLocationsRequest } from '../api/locations'
+import { createAppointmentRequest } from '../api/appointments'
 
 const patientSchema = z.object({
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
@@ -24,29 +26,79 @@ const patientSchema = z.object({
 
 type PatientFormData = z.infer<typeof patientSchema>
 
-const LOCATION_NAMES = {
-  '1': { name: 'Houston - Downtown', address: '123 Main St, Houston, TX 77002' },
-  '2': { name: 'Houston - Galleria', address: '456 Westheimer Rd, Houston, TX 77056' },
-  '3': { name: 'Austin - Central', address: '789 Congress Ave, Austin, TX 78701' },
-  '4': { name: 'Austin - Round Rock', address: '321 Palm Valley Blvd, Round Rock, TX 78664' },
-  '5': { name: 'Dallas - Uptown', address: '555 McKinney Ave, Dallas, TX 75201' },
-  '6': { name: 'Fort Worth - Sundance', address: '888 Sundance Square, Fort Worth, TX 76102' },
-}
-
 export const BookingFlow = () => {
   const navigate = useNavigate()
   const [activeStep, setActiveStep] = useState(0)
+  const [locations, setLocations] = useState<Location[]>([])
   const [selectedLocation, setSelectedLocation] = useState<string>()
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedTime, setSelectedTime] = useState<string>()
+  const [slots, setSlots] = useState<ApiTimeSlot[]>([])
+  const [isSlotsLoading, setIsSlotsLoading] = useState(false)
+  const [slotsError, setSlotsError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const form = useForm<PatientFormData>({
     resolver: zodResolver(patientSchema),
     mode: 'onChange',
+    defaultValues: {
+      dateOfBirth: '',
+      hasInsurance: 'no',
+      lastDentalVisit: 'never',
+      hasDentalPain: 'no',
+      allergies: '',
+      additionalNotes: '',
+    },
   })
 
+  useEffect(() => {
+    const loadLocations = async () => {
+      const data = await listLocationsRequest()
+      setLocations(
+        data.map((loc) => ({
+          id: loc.id,
+          name: loc.name,
+          address: loc.address ?? '',
+          city: loc.city ?? '',
+          state: loc.state ?? '',
+          phone: loc.phone ?? '',
+        }))
+      )
+    }
+    void loadLocations()
+  }, [])
+
+  useEffect(() => {
+    const loadSlots = async () => {
+      if (!selectedLocation || !selectedDate) {
+        setSlots([])
+        setSlotsError(null)
+        return
+      }
+      setIsSlotsLoading(true)
+      setSlotsError(null)
+      try {
+        const data = await getAvailableSlotsRequest(
+          selectedLocation,
+          dayjs(selectedDate).format('YYYY-MM-DD')
+        )
+        const allSlots = [
+          ...data.slots_by_time.morning,
+          ...data.slots_by_time.afternoon,
+          ...data.slots_by_time.evening,
+        ]
+        setSlots(allSlots)
+      } catch (error) {
+        setSlotsError('Failed to load available slots')
+        setSlots([])
+      } finally {
+        setIsSlotsLoading(false)
+      }
+    }
+    void loadSlots()
+  }, [selectedLocation, selectedDate])
+
   const handleDemoFill = () => {
-    // Generate a random date of birth (18-65 years old)
     const today = new Date()
     const minYear = today.getFullYear() - 65
     const maxYear = today.getFullYear() - 18
@@ -58,7 +110,7 @@ export const BookingFlow = () => {
     form.setValue('hasInsurance', faker.datatype.boolean() ? 'yes' : 'no')
     form.setValue(
       'lastDentalVisit',
-      faker.helpers.arrayElement(['within-6-months', '6-12-months', 'over-a-year', 'never']) as any
+      faker.helpers.arrayElement(['within-6-months', '6-12-months', 'over-a-year', 'never'])
     )
     form.setValue('hasDentalPain', faker.datatype.boolean() ? 'yes' : 'no')
     form.setValue('allergies', faker.datatype.boolean() ? faker.lorem.sentence() : '')
@@ -77,28 +129,45 @@ export const BookingFlow = () => {
     setActiveStep((prev) => prev + 1)
   }
 
-  const handleConfirm = () => {
-    if (selectedLocation && selectedDate && selectedTime) {
-      const appointmentId = Math.random().toString().slice(2, 8)
-      navigate(`/appointments/${appointmentId}`)
+  const handleConfirm = async () => {
+    if (!selectedLocation || !selectedDate || !selectedTime) return
+    setSubmitError(null)
+
+    const start = dayjs(`${dayjs(selectedDate).format('YYYY-MM-DD')} ${selectedTime}`)
+
+    try {
+      const created = await createAppointmentRequest({
+        location_id: selectedLocation,
+        scheduled_start: start.toISOString(),
+        notes: form.getValues('additionalNotes'),
+      })
+      navigate(`/appointments/${created.id}`)
+    } catch {
+      setSubmitError('Could not create appointment. Please try another slot.')
     }
   }
 
-  const locationInfo = selectedLocation ? LOCATION_NAMES[selectedLocation as keyof typeof LOCATION_NAMES] : null
+  const locationInfo = useMemo(
+    () => locations.find((location) => location.id === selectedLocation) ?? null,
+    [locations, selectedLocation]
+  )
   const formData = form.watch()
 
   return (
     <Container size="lg" py="xl">
       <Stack gap="lg">
         <Title order={1}>Book Your Appointment</Title>
+        {submitError && <Text c="red">{submitError}</Text>}
 
         <Stepper active={activeStep} onStepClick={setActiveStep} allowNextStepsSelect={false}>
-          {/* Step 1: Location */}
           <Stepper.Step label="Location" description="Select a clinic">
-            <LocationPicker selectedId={selectedLocation} onSelect={setSelectedLocation} />
+            <LocationPicker
+              locations={locations}
+              selectedId={selectedLocation}
+              onSelect={setSelectedLocation}
+            />
           </Stepper.Step>
 
-          {/* Step 2: Date & Time */}
           <Stepper.Step label="Date & Time" description="Choose a date and time">
             <Stack gap="lg">
               <DateInput
@@ -110,22 +179,25 @@ export const BookingFlow = () => {
                 onChange={setSelectedDate}
               />
               {selectedDate && (
-                <TimeSlotPicker selectedTime={selectedTime} onSelect={setSelectedTime} date={selectedDate} />
+                <TimeSlotPicker
+                  selectedTime={selectedTime}
+                  onSelect={setSelectedTime}
+                  slots={slots}
+                  isLoading={isSlotsLoading}
+                />
               )}
             </Stack>
           </Stepper.Step>
 
-          {/* Step 3: Patient Information */}
           <Stepper.Step label="Patient Info" description="Your medical info">
             <PatientForm form={form} onDemoFill={handleDemoFill} />
           </Stepper.Step>
 
-          {/* Step 4: Review */}
           <Stepper.Step label="Review" description="Confirm booking">
             {locationInfo && selectedDate && selectedTime && (
               <BookingSummary
                 locationName={locationInfo.name}
-                locationAddress={locationInfo.address}
+                locationAddress={`${locationInfo.address}, ${locationInfo.city}, ${locationInfo.state}`}
                 date={selectedDate.toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -139,7 +211,6 @@ export const BookingFlow = () => {
           </Stepper.Step>
         </Stepper>
 
-        {/* Navigation Buttons */}
         <Group justify="space-between" mt="xl">
           <Button
             variant="light"
@@ -150,9 +221,7 @@ export const BookingFlow = () => {
           </Button>
 
           {activeStep < 3 ? (
-            <Button onClick={handleNext}>
-              Next
-            </Button>
+            <Button onClick={handleNext}>Next</Button>
           ) : (
             <Button onClick={handleConfirm} color="green">
               Confirm Booking

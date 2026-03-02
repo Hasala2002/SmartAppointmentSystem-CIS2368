@@ -95,7 +95,6 @@ CREATE TABLE IF NOT EXISTS staff (
 CREATE TABLE IF NOT EXISTS availability (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   location_id uuid NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
-  staff_id uuid REFERENCES staff(id) ON DELETE CASCADE,
   day_of_week int NOT NULL,
   start_time time NOT NULL,
   end_time time NOT NULL,
@@ -109,7 +108,6 @@ CREATE TABLE IF NOT EXISTS appointments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   location_id uuid NOT NULL REFERENCES locations(id) ON DELETE CASCADE,
   customer_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  staff_id uuid REFERENCES staff(id) ON DELETE SET NULL,
   scheduled_start timestamp NOT NULL,
   scheduled_end timestamp NOT NULL,
   status appointment_status NOT NULL DEFAULT 'pending',

@@ -8,10 +8,13 @@ interface AppointmentCardProps {
 }
 
 const STATUS_COLORS = {
-  confirmed: 'green',
   pending: 'yellow',
+  confirmed: 'green',
+  checked_in: 'cyan',
+  in_progress: 'teal',
   completed: 'blue',
   cancelled: 'red',
+  no_show: 'gray',
 }
 
 export const AppointmentCard = ({ appointment }: AppointmentCardProps) => {

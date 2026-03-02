@@ -9,19 +9,30 @@ import {
   Badge,
 } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { PageHeader } from "../components/common/PageHeader";
 import { StatsCardRow } from "../components/common/StatsCard";
 import { AppointmentsTable } from "../components/appointments/AppointmentsTable";
-import { mockAppointments } from "../data/mockData";
+import { listAppointmentsRequest } from "../api/appointments";
+import { Appointment } from "../types";
 import { Checkmark, CloseCircle, CheckmarkCircle, Time } from "react-ionicons";
 import dayjs from "dayjs";
 
 export function Dashboard() {
   const navigate = useNavigate();
   const today = dayjs().format("YYYY-MM-DD");
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+
+  useEffect(() => {
+    const loadAppointments = async () => {
+      const data = await listAppointmentsRequest();
+      setAppointments(data);
+    };
+    void loadAppointments();
+  }, []);
 
   // Filter today's appointments
-  const todaysAppointments = mockAppointments.filter(
+  const todaysAppointments = appointments.filter(
     (apt) => dayjs(apt.scheduledStart).format("YYYY-MM-DD") === today,
   );
 

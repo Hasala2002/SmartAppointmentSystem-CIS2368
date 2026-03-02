@@ -1,5 +1,5 @@
 import { MantineProvider, createTheme } from '@mantine/core'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import '@mantine/core/styles.css'
 import { AdminShell } from './components/layout/AdminShell'
 import { Login } from './pages/Login'
@@ -12,6 +12,7 @@ import { Queue } from './pages/Queue'
 import { Staff } from './pages/Staff'
 import { Locations } from './pages/Locations'
 import { Settings } from './pages/Settings'
+import { useAuthStore } from './stores/authStore'
 
 const theme = createTheme({
   primaryColor: 'teal',
@@ -33,6 +34,8 @@ const theme = createTheme({
 })
 
 function App() {
+  const { isAuthenticated, user } = useAuthStore()
+  const isStaff = isAuthenticated && user?.role === 'staff'
   return (
     <MantineProvider theme={theme}>
       <BrowserRouter>
@@ -40,7 +43,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route element={<AdminShell />}>
+          <Route element={isStaff ? <AdminShell /> : <Navigate to="/login" replace />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/appointments/:id" element={<AppointmentDetails />} />

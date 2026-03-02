@@ -1,13 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from datetime import datetime
+from sqlalchemy import select, and_
+from datetime import datetime, timedelta
 import uuid
 from app.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_staff_user
 from app.models.user import User
 from app.models.appointment import Appointment, AppointmentStatus
 from app.models.location import Location
+from app.models.staff import Staff
 from app.schemas.appointment import (
     CreateAppointmentRequest,
     AppointmentResponse,
@@ -35,11 +36,20 @@ async def create_appointment(
             detail="Location not found"
         )
     
+    # Convert to naive datetime if timezone-aware
+    scheduled_start = request.scheduled_start
+    if scheduled_start.tzinfo is not None:
+        scheduled_start = scheduled_start.replace(tzinfo=None)
+    
+    scheduled_end_input = request.scheduled_end
+    if scheduled_end_input and scheduled_end_input.tzinfo is not None:
+        scheduled_end_input = scheduled_end_input.replace(tzinfo=None)
+    
     # Check for conflicts
     result = await db.execute(
         select(Appointment).where(
             (Appointment.location_id == request.location_id) &
-            (Appointment.scheduled_start == request.scheduled_start) &
+            (Appointment.scheduled_start == scheduled_start) &
             (Appointment.status.notin_([AppointmentStatus.cancelled, AppointmentStatus.no_show]))
         )
     )
@@ -52,14 +62,21 @@ async def create_appointment(
         )
     
     # Create appointment
+    scheduled_end = scheduled_end_input or (
+        scheduled_start + timedelta(minutes=location.appointment_duration_mins or 30)
+    )
+
+    now = datetime.utcnow()
     appointment = Appointment(
         id=uuid.uuid4(),
         location_id=request.location_id,
         customer_id=current_user.id,
-        scheduled_start=request.scheduled_start,
-        scheduled_end=request.scheduled_end,
+        scheduled_start=scheduled_start,
+        scheduled_end=scheduled_end,
         status=AppointmentStatus.pending,
-        notes=request.notes
+        notes=request.notes,
+        created_at=now,
+        updated_at=now
     )
     
     db.add(appointment)
@@ -74,10 +91,33 @@ async def list_appointments(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """List appointments for current user"""
-    result = await db.execute(
-        select(Appointment).where(Appointment.customer_id == current_user.id)
+    """List appointments - customer sees their own, staff sees location appointments"""
+    # Check if user is staff
+    staff_result = await db.execute(
+        select(Staff).where(Staff.user_id == current_user.id)
     )
+    staff = staff_result.scalar_one_or_none()
+    
+    if staff:
+        # Staff user - return appointments for their location(s)
+        if staff.has_global_access:
+            # Global staff sees all appointments
+            result = await db.execute(select(Appointment).order_by(Appointment.scheduled_start.desc()))
+        else:
+            # Location-scoped staff sees only their location's appointments
+            result = await db.execute(
+                select(Appointment).where(
+                    Appointment.location_id == staff.location_id
+                ).order_by(Appointment.scheduled_start.desc())
+            )
+    else:
+        # Customer user - return only their appointments
+        result = await db.execute(
+            select(Appointment).where(
+                Appointment.customer_id == current_user.id
+            )
+        )
+    
     appointments = result.scalars().all()
     return [AppointmentResponse.from_orm(appt) for appt in appointments]
 
@@ -142,8 +182,11 @@ async def reschedule_appointment(
         )
     
     # Update appointment
+    scheduled_end = request.scheduled_end or (
+        request.scheduled_start + timedelta(minutes=30)
+    )
     appointment.scheduled_start = request.scheduled_start
-    appointment.scheduled_end = request.scheduled_end
+    appointment.scheduled_end = scheduled_end
     
     await db.commit()
     await db.refresh(appointment)

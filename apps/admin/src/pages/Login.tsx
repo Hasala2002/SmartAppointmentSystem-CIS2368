@@ -12,7 +12,8 @@ import {
 } from "@mantine/core";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Lock, LockClosedOutline } from "react-ionicons";
+import { LockClosedOutline } from "react-ionicons";
+import { useAuthStore } from "../stores/authStore";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -22,8 +23,10 @@ const Login = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {},
   );
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const login = useAuthStore((state) => state.login);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: { email?: string; password?: string } = {};
 
@@ -38,9 +41,17 @@ const Login = () => {
       setErrors(newErrors);
       return;
     }
-
-    console.log("Login attempt:", { email, password, rememberMe });
-    navigate("/");
+    setSubmitError(null);
+    try {
+      await login(email, password);
+      navigate("/");
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign in. Please verify your credentials."
+      );
+    }
   };
 
   return (
@@ -93,6 +104,7 @@ const Login = () => {
               <Button type="submit" fullWidth color="teal" size="md">
                 Sign In
               </Button>
+              {submitError && <Text c="red" size="sm">{submitError}</Text>}
             </Stack>
           </form>
 

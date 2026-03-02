@@ -23,63 +23,18 @@ import {
   MdShield,
   MdPeople,
 } from "react-icons/md";
+import { useEffect, useState } from "react";
+import { listLocationsRequest } from "../api/locations";
 
-const locations = [
-  {
-    id: "1",
-    name: "Houston - Downtown",
-    address: "123 Main St",
-    city: "Houston",
-    state: "TX",
-    zip: "77002",
-    phone: "(713) 555-0101",
-  },
-  {
-    id: "2",
-    name: "Houston - Galleria",
-    address: "456 Westheimer Rd",
-    city: "Houston",
-    state: "TX",
-    zip: "77056",
-    phone: "(713) 555-0102",
-  },
-  {
-    id: "3",
-    name: "Austin - Central",
-    address: "789 Congress Ave",
-    city: "Austin",
-    state: "TX",
-    zip: "78701",
-    phone: "(512) 555-0103",
-  },
-  {
-    id: "4",
-    name: "Austin - Round Rock",
-    address: "321 Palm Valley Blvd",
-    city: "Round Rock",
-    state: "TX",
-    zip: "78664",
-    phone: "(512) 555-0104",
-  },
-  {
-    id: "5",
-    name: "Dallas - Uptown",
-    address: "555 McKinney Ave",
-    city: "Dallas",
-    state: "TX",
-    zip: "75201",
-    phone: "(214) 555-0105",
-  },
-  {
-    id: "6",
-    name: "Fort Worth - Sundance",
-    address: "888 Sundance Square",
-    city: "Fort Worth",
-    state: "TX",
-    zip: "76102",
-    phone: "(817) 555-0106",
-  },
-];
+type LandingLocation = {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+};
 
 const features = [
   {
@@ -101,6 +56,25 @@ const features = [
 
 export const Landing = () => {
   const navigate = useNavigate();
+  const [locations, setLocations] = useState<LandingLocation[]>([]);
+
+  useEffect(() => {
+    const loadLocations = async () => {
+      const data = await listLocationsRequest();
+      setLocations(
+        data.map((loc) => ({
+          id: loc.id,
+          name: loc.name,
+          address: loc.address ?? "",
+          city: loc.city ?? "",
+          state: loc.state ?? "",
+          zip: loc.zip_code ?? "",
+          phone: loc.phone ?? "",
+        }))
+      );
+    };
+    void loadLocations();
+  }, []);
 
   return (
     <Stack gap={0}>

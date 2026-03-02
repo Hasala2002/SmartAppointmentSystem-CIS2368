@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
 from app.core.security import decode_token
-from app.models.user import User
+from app.models.user import User, UserRole
 
 security = HTTPBearer()
 
@@ -38,4 +38,16 @@ async def get_current_user(
 async def get_current_active_user(user: User = Depends(get_current_user)) -> User:
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    return user
+
+
+async def get_current_staff_user(
+    user: User = Depends(get_current_user)
+) -> User:
+    role_value = user.role.value if hasattr(user.role, "value") else str(user.role)
+    if role_value != UserRole.staff.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Staff access required"
+        )
     return user

@@ -21,7 +21,6 @@ class Appointment(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     location_id = Column(UUID(as_uuid=True), ForeignKey("locations.id", ondelete="CASCADE"), nullable=False)
     customer_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    staff_id = Column(UUID(as_uuid=True), ForeignKey("staff.id", ondelete="SET NULL"), nullable=True)
     scheduled_start = Column(DateTime, nullable=False)
     scheduled_end = Column(DateTime, nullable=False)
     status = Column(Enum(AppointmentStatus, name="appointment_status"), nullable=False, default=AppointmentStatus.pending)

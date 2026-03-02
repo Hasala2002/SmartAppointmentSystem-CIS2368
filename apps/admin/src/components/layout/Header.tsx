@@ -12,6 +12,7 @@ import {
   Image,
 } from "@mantine/core";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Notifications, LogOut } from "react-ionicons";
 import { LOCATIONS } from "../../types";
 import { useAuthStore } from "../../stores/authStore";
@@ -26,6 +27,7 @@ export function Header({ opened, toggle }: HeaderProps) {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(
     "all",
   );
+  const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
 
   const locationOptions = [
@@ -35,8 +37,7 @@ export function Header({ opened, toggle }: HeaderProps) {
 
   const handleLogout = () => {
     logout();
-    // Navigate to login in the future
-    console.log("Logging out...");
+    navigate("/login");
   };
 
   return (
