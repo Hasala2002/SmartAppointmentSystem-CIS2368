@@ -19,6 +19,43 @@ from app.schemas.appointment import (
 router = APIRouter(prefix="/api/v1/appointments", tags=["appointments"])
 
 
+async def _get_location_name(location_id, db: AsyncSession) -> str | None:
+    """Helper to fetch location name"""
+    result = await db.execute(select(Location).where(Location.id == location_id))
+    location = result.scalar_one_or_none()
+    return location.name if location else None
+
+
+async def _build_appointment_response(
+    appointment: Appointment,
+    location_name: str | None = None,
+    customer: User | None = None
+) -> AppointmentResponse:
+    """Helper to build appointment response with location and customer details"""
+    return AppointmentResponse(
+        id=appointment.id,
+        location_id=appointment.location_id,
+        location_name=location_name,
+        customer_id=appointment.customer_id,
+        customer_email=customer.email if customer else None,
+        customer_first_name=customer.first_name if customer else None,
+        customer_last_name=customer.last_name if customer else None,
+        customer_phone=customer.phone if customer else None,
+        customer_date_of_birth=customer.date_of_birth if customer else None,
+        scheduled_start=appointment.scheduled_start,
+        scheduled_end=appointment.scheduled_end,
+        status=appointment.status.value if hasattr(appointment.status, 'value') else str(appointment.status),
+        notes=appointment.notes,
+        last_dental_visit=getattr(appointment, "last_dental_visit", None),
+        has_dental_pain=getattr(appointment, "has_dental_pain", None),
+        allergies=getattr(appointment, "allergies", None),
+        additional_notes=getattr(appointment, "additional_notes", None),
+        confirmation_token=appointment.confirmation_token,
+        created_at=appointment.created_at,
+        updated_at=appointment.updated_at
+    )
+
+
 @router.post("/", response_model=AppointmentResponse)
 async def create_appointment(
     request: CreateAppointmentRequest,
@@ -75,6 +112,10 @@ async def create_appointment(
         scheduled_end=scheduled_end,
         status=AppointmentStatus.pending,
         notes=request.notes,
+        last_dental_visit=request.last_dental_visit,
+        has_dental_pain=request.has_dental_pain,
+        allergies=request.allergies,
+        additional_notes=request.additional_notes,
         created_at=now,
         updated_at=now
     )
@@ -83,7 +124,8 @@ async def create_appointment(
     await db.commit()
     await db.refresh(appointment)
     
-    return AppointmentResponse.from_orm(appointment)
+    location_name = location.name
+    return await _build_appointment_response(appointment, location_name, current_user)
 
 
 @router.get("/", response_model=list[AppointmentResponse])
@@ -119,7 +161,28 @@ async def list_appointments(
         )
     
     appointments = result.scalars().all()
-    return [AppointmentResponse.from_orm(appt) for appt in appointments]
+    
+    # Fetch all location names and customers in one query each
+    location_ids = {appt.location_id for appt in appointments}
+    location_result = await db.execute(
+        select(Location).where(Location.id.in_(location_ids))
+    )
+    locations_map = {loc.id: loc.name for loc in location_result.scalars().all()}
+    
+    customer_ids = {appt.customer_id for appt in appointments}
+    customer_result = await db.execute(
+        select(User).where(User.id.in_(customer_ids))
+    )
+    customers_map = {cust.id: cust for cust in customer_result.scalars().all()}
+    
+    return [
+        await _build_appointment_response(
+            appt,
+            locations_map.get(appt.location_id),
+            customers_map.get(appt.customer_id)
+        )
+        for appt in appointments
+    ]
 
 
 @router.get("/{appointment_id}", response_model=AppointmentResponse)
@@ -132,13 +195,36 @@ async def get_appointment(
     result = await db.execute(select(Appointment).where(Appointment.id == appointment_id))
     appointment = result.scalar_one_or_none()
     
-    if not appointment or appointment.customer_id != current_user.id:
+    if not appointment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Appointment not found"
         )
     
-    return AppointmentResponse.from_orm(appointment)
+    # Check authorization: customer can view their own, staff can view their location's
+    staff_result = await db.execute(
+        select(Staff).where(Staff.user_id == current_user.id)
+    )
+    staff = staff_result.scalar_one_or_none()
+    
+    if not staff and appointment.customer_id != current_user.id:
+        # Not staff and not the customer
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Appointment not found"
+        )
+    
+    if staff and not staff.has_global_access and appointment.location_id != staff.location_id:
+        # Location-scoped staff trying to view appointment from different location
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Appointment not found"
+        )
+    
+    location_name = await _get_location_name(appointment.location_id, db)
+    customer_result = await db.execute(select(User).where(User.id == appointment.customer_id))
+    customer = customer_result.scalar_one_or_none()
+    return await _build_appointment_response(appointment, location_name, customer)
 
 
 @router.patch("/{appointment_id}/reschedule", response_model=AppointmentResponse)
@@ -191,7 +277,8 @@ async def reschedule_appointment(
     await db.commit()
     await db.refresh(appointment)
     
-    return AppointmentResponse.from_orm(appointment)
+    location_name = await _get_location_name(appointment.location_id, db)
+    return await _build_appointment_response(appointment, location_name, current_user)
 
 
 @router.patch("/{appointment_id}/cancel", response_model=AppointmentResponse)
@@ -229,4 +316,5 @@ async def cancel_appointment(
     await db.commit()
     await db.refresh(appointment)
     
-    return AppointmentResponse.from_orm(appointment)
+    location_name = await _get_location_name(appointment.location_id, db)
+    return await _build_appointment_response(appointment, location_name, current_user)

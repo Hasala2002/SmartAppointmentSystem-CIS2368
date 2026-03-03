@@ -5,7 +5,12 @@ import { ApiAppointment, Appointment, PatientInfo } from '../types'
 interface CreateAppointmentPayload {
   location_id: string
   scheduled_start: string
+  scheduled_end?: string
   notes?: string
+  last_dental_visit?: 'within-6-months' | '6-12-months' | 'over-a-year' | 'never'
+  has_dental_pain?: boolean
+  allergies?: string
+  additional_notes?: string
 }
 
 interface ReschedulePayload {
@@ -23,6 +28,7 @@ export const mapApiAppointment = (
   id: appt.id,
   userId: appt.customer_id,
   locationId: appt.location_id,
+  locationName: appt.location_name,
   date: dayjs(appt.scheduled_start).format('MMM DD, YYYY'),
   time: dayjs(appt.scheduled_start).format('h:mm A'),
   status: appt.status,
@@ -30,6 +36,10 @@ export const mapApiAppointment = (
   notes: appt.notes ?? '',
   scheduledStart: appt.scheduled_start,
   scheduledEnd: appt.scheduled_end,
+  lastDentalVisit: appt.last_dental_visit,
+  hasDentalPain: appt.has_dental_pain,
+  allergies: appt.allergies,
+  additionalNotes: appt.additional_notes,
 })
 
 export const listAppointmentsRequest = async (): Promise<ApiAppointment[]> => {

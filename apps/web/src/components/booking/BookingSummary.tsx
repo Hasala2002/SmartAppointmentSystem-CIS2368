@@ -7,6 +7,7 @@ interface BookingSummaryProps {
   date: string
   time: string
   patientInfo: PatientInfo
+  patientDob?: string | null
   onEdit: (step: number) => void
 }
 
@@ -23,6 +24,7 @@ export const BookingSummary = ({
   date,
   time,
   patientInfo,
+  patientDob,
   onEdit,
 }: BookingSummaryProps) => {
   return (
@@ -33,7 +35,7 @@ export const BookingSummary = ({
           <Text fw={600} size="lg">
             Location
           </Text>
-          <Anchor onClick={() => onEdit(1)} size="sm">
+          <Anchor onClick={() => onEdit(0)} size="sm">
             Edit
           </Anchor>
         </Group>
@@ -51,7 +53,7 @@ export const BookingSummary = ({
           <Text fw={600} size="lg">
             Date & Time
           </Text>
-          <Anchor onClick={() => onEdit(2)} size="sm">
+          <Anchor onClick={() => onEdit(1)} size="sm">
             Edit
           </Anchor>
         </Group>
@@ -71,7 +73,7 @@ export const BookingSummary = ({
           <Text fw={600} size="lg">
             Patient Information
           </Text>
-          <Anchor onClick={() => onEdit(3)} size="sm">
+          <Anchor onClick={() => onEdit(2)} size="sm">
             Edit
           </Anchor>
         </Group>
@@ -80,14 +82,18 @@ export const BookingSummary = ({
             <Text fw={500} w="50%">
               Date of Birth:
             </Text>
-            <Text>{patientInfo.dateOfBirth}</Text>
+            <Text>{patientDob || 'N/A'}</Text>
           </Group>
           <Divider />
           <Group>
             <Text fw={500} w="50%">
               Dental Insurance:
             </Text>
-            <Text>{patientInfo.hasInsurance === 'yes' ? 'Yes' : 'No'}</Text>
+            <Text>
+              {patientInfo.dentalInsuranceStatus === 'no_insurance'
+                ? 'No'
+                : 'Yes'}
+            </Text>
           </Group>
           <Divider />
           <Group>
@@ -101,7 +107,7 @@ export const BookingSummary = ({
             <Text fw={500} w="50%">
               Dental Pain:
             </Text>
-            <Text>{patientInfo.hasDentalPain === 'yes' ? 'Yes' : 'No'}</Text>
+            <Text>{patientInfo.hasDentalPain ? 'Yes' : 'No'}</Text>
           </Group>
           {patientInfo.allergies && (
             <>

@@ -4,6 +4,8 @@ export interface User {
   firstName: string
   lastName: string
   phone: string
+  dateOfBirth?: string | null
+  dentalInsuranceStatus?: 'same_as_last' | 'changed' | 'no_insurance' | null
 }
 
 export interface ApiUser {
@@ -12,6 +14,8 @@ export interface ApiUser {
   first_name: string
   last_name: string
   phone: string | null
+  date_of_birth: string | null
+  dental_insurance_status: 'same_as_last' | 'changed' | 'no_insurance' | null
   role: string
   is_active: boolean
   email_verified: boolean
@@ -53,6 +57,7 @@ export interface Appointment {
   id: string
   userId: string
   locationId: string
+  locationName: string | null
   date: string
   time: string
   status:
@@ -67,11 +72,16 @@ export interface Appointment {
   notes?: string
   scheduledStart?: string
   scheduledEnd?: string
+  lastDentalVisit?: 'within-6-months' | '6-12-months' | 'over-a-year' | 'never' | null
+  hasDentalPain?: boolean | null
+  allergies?: string | null
+  additionalNotes?: string | null
 }
 
 export interface ApiAppointment {
   id: string
   location_id: string
+  location_name: string | null
   customer_id: string
   scheduled_start: string
   scheduled_end: string
@@ -84,16 +94,19 @@ export interface ApiAppointment {
     | 'cancelled'
     | 'no_show'
   notes: string | null
+  last_dental_visit: 'within-6-months' | '6-12-months' | 'over-a-year' | 'never' | null
+  has_dental_pain: boolean | null
+  allergies: string | null
+  additional_notes: string | null
   confirmation_token: string | null
   created_at: string
   updated_at: string
 }
 
 export interface PatientInfo {
-  dateOfBirth: string
-  hasInsurance: 'yes' | 'no'
+  dentalInsuranceStatus: 'same_as_last' | 'changed' | 'no_insurance'
   lastDentalVisit: 'within-6-months' | '6-12-months' | 'over-a-year' | 'never'
-  hasDentalPain: 'yes' | 'no'
+  hasDentalPain: boolean
   allergies?: string
   additionalNotes?: string
 }

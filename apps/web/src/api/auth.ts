@@ -12,6 +12,8 @@ interface RegisterPayload {
   first_name: string
   last_name: string
   phone?: string
+  date_of_birth?: string
+  dental_insurance_status?: 'same_as_last' | 'changed' | 'no_insurance'
 }
 
 export const mapApiUser = (user: ApiUser): User => ({
@@ -20,6 +22,8 @@ export const mapApiUser = (user: ApiUser): User => ({
   firstName: user.first_name,
   lastName: user.last_name,
   phone: user.phone ?? '',
+  dateOfBirth: user.date_of_birth,
+  dentalInsuranceStatus: user.dental_insurance_status,
 })
 
 export const loginRequest = async (payload: LoginPayload): Promise<ApiAuthResponse> => {

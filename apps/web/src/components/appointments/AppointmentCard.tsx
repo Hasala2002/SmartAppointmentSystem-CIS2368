@@ -38,7 +38,7 @@ export const AppointmentCard = ({ appointment }: AppointmentCardProps) => {
         <Group gap="xs">
           <MdLocationOn style={{ fontSize: 18, color: 'teal' }} />
           <Text size="sm" c="dimmed">
-            Location ID: {appointment.locationId}
+            {appointment.locationName || appointment.locationId}
           </Text>
         </Group>
 

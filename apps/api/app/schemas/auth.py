@@ -1,5 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from app.schemas.user import UserResponse
+from datetime import date
+from typing import Literal
 
 
 class RegisterRequest(BaseModel):
@@ -8,6 +10,8 @@ class RegisterRequest(BaseModel):
     first_name: str
     last_name: str
     phone: str | None = None
+    date_of_birth: date | None = None
+    has_dental_insurance: bool | None = None
 
 
 class LoginRequest(BaseModel):

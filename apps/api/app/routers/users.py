@@ -61,6 +61,8 @@ async def create_staff_user(
         first_name=request.first_name,
         last_name=request.last_name,
         phone=request.phone,
+        date_of_birth=request.date_of_birth,
+        has_dental_insurance=request.has_dental_insurance,
         role=UserRole.staff,
         is_active=True,
         email_verified=True

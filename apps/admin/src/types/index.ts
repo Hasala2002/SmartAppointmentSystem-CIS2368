@@ -3,6 +3,7 @@ export interface Appointment {
   patientName: string
   patientEmail: string
   patientPhone: string
+  patientDob: string
   locationId: string
   locationName: string
   scheduledStart: string

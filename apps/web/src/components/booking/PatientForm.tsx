@@ -1,8 +1,6 @@
 import { Stack, Text, Group, Button, Select, Radio, Textarea } from '@mantine/core'
-import { DateInput } from '@mantine/dates'
 import { UseFormReturn } from 'react-hook-form'
 import { PatientInfo } from '../../types'
-import dayjs from 'dayjs'
 
 interface PatientFormProps {
   form: UseFormReturn<Partial<PatientInfo>>
@@ -10,7 +8,7 @@ interface PatientFormProps {
 }
 
 export const PatientForm = ({ form, onDemoFill }: PatientFormProps) => {
-  const insurance = form.watch('hasInsurance')
+  const insurance = form.watch('dentalInsuranceStatus')
   const lastDentalVisit = form.watch('lastDentalVisit')
   const hasDentalPain = form.watch('hasDentalPain')
 
@@ -25,23 +23,19 @@ export const PatientForm = ({ form, onDemoFill }: PatientFormProps) => {
         </Button>
       </Group>
 
-      <DateInput
-        label="Date of Birth"
-        placeholder="Select your date of birth"
-        maxDate={new Date()}
-        value={form.watch('dateOfBirth') ? dayjs(form.watch('dateOfBirth')).toDate() : null}
-        onChange={(date) => form.setValue('dateOfBirth', date ? dayjs(date).format('YYYY-MM-DD') : '')}
-      />
 
       <Select
-        label="Do you have dental insurance?"
+        label="Is your recorded dental insurance the same as last time?"
         placeholder="Select an option"
         data={[
-          { value: 'yes', label: 'Yes' },
-          { value: 'no', label: 'No' },
+          { value: 'same_as_last', label: 'Yes, same as last time' },
+          { value: 'changed', label: 'No, it changed' },
+          { value: 'no_insurance', label: "I don't have dental insurance" },
         ]}
         value={insurance}
-        onChange={(value) => form.setValue('hasInsurance', (value as PatientInfo['hasInsurance']) ?? 'no')}
+        onChange={(value) =>
+          form.setValue('dentalInsuranceStatus', (value as PatientInfo['dentalInsuranceStatus']) ?? 'same_as_last')
+        }
       />
 
       <Select
@@ -61,12 +55,12 @@ export const PatientForm = ({ form, onDemoFill }: PatientFormProps) => {
 
       <Radio.Group
         label="Are you currently experiencing any dental pain?"
-        value={hasDentalPain}
-        onChange={(value) => form.setValue('hasDentalPain', value as PatientInfo['hasDentalPain'])}
+        value={hasDentalPain ? 'true' : 'false'}
+        onChange={(value) => form.setValue('hasDentalPain', value === 'true')}
       >
         <Stack gap="sm">
-          <Radio value="yes" label="Yes" />
-          <Radio value="no" label="No" />
+          <Radio value="true" label="Yes" />
+          <Radio value="false" label="No" />
         </Stack>
       </Radio.Group>
 

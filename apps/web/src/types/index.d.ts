@@ -48,6 +48,7 @@ export interface Appointment {
     id: string;
     userId: string;
     locationId: string;
+    locationName: string | null;
     date: string;
     time: string;
     status: 'pending' | 'confirmed' | 'checked_in' | 'in_progress' | 'completed' | 'cancelled' | 'no_show';
@@ -59,6 +60,7 @@ export interface Appointment {
 export interface ApiAppointment {
     id: string;
     location_id: string;
+    location_name: string | null;
     customer_id: string;
     scheduled_start: string;
     scheduled_end: string;

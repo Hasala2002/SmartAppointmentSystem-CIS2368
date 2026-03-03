@@ -237,7 +237,8 @@ async def get_bookable_slots(
     )
     booked = result.scalars().all()
 
-    duration_mins = location.appointment_duration_mins or 30
+    # Use 15-minute slots for availability display
+    slot_duration_mins = 15
 
     now = datetime.utcnow()
     is_today = slot_date == now.date()
@@ -248,7 +249,7 @@ async def get_bookable_slots(
         current = avail.start_time
         while current < avail.end_time:
             slot_start = datetime.combine(slot_date, current)
-            slot_end = slot_start + timedelta(minutes=duration_mins)
+            slot_end = slot_start + timedelta(minutes=slot_duration_mins)
 
             # don't emit slots that run past the availability window
             if slot_end.time() > avail.end_time:

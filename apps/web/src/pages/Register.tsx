@@ -1,4 +1,4 @@
-import { Paper, TextInput, PasswordInput, Button, Anchor, Center, Stack, Title } from '@mantine/core'
+import { Paper, TextInput, PasswordInput, Button, Anchor, Center, Stack, Title, Select } from '@mantine/core'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -12,6 +12,8 @@ const registerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(10, 'Phone number must be at least 10 characters'),
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
+  dentalInsuranceStatus: z.enum(['same_as_last', 'changed', 'no_insurance']),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string().min(6, 'Password must be at least 6 characters'),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -26,9 +28,10 @@ export const Register = () => {
   const { login } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   })
+  const dentalStatus = watch('dentalInsuranceStatus')
   const onSubmit = async (data: RegisterFormData) => {
     setIsSubmitting(true)
     setSubmitError(null)
@@ -39,6 +42,8 @@ export const Register = () => {
         first_name: data.firstName,
         last_name: data.lastName,
         phone: data.phone,
+        date_of_birth: data.dateOfBirth,
+        dental_insurance_status: data.dentalInsuranceStatus,
       })
       login(mapApiUser(response.user), response.access_token, response.refresh_token)
       navigate('/dashboard')
@@ -87,6 +92,26 @@ export const Register = () => {
                 placeholder="(555) 123-4567"
                 error={errors.phone?.message}
                 {...register('phone')}
+              />
+
+              <TextInput
+                type="date"
+                label="Date of Birth"
+                placeholder="Select your date of birth"
+                error={errors.dateOfBirth?.message}
+                {...register('dateOfBirth')}
+              />
+
+              <Select
+                label="Do you have dental insurance?"
+                placeholder="Select an option"
+                data={[
+                  { value: 'same_as_last', label: 'Yes' },
+                  { value: 'no_insurance', label: 'No' },
+                ]}
+                error={errors.dentalInsuranceStatus?.message}
+                value={dentalStatus}
+                onChange={(val) => setValue('dentalInsuranceStatus', val as RegisterFormData['dentalInsuranceStatus'])}
               />
 
               <PasswordInput

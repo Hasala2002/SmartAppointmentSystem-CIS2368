@@ -16,6 +16,7 @@ import { MdCalendarToday, MdLocationOn } from 'react-icons/md'
 import dayjs from 'dayjs'
 import { cancelAppointmentRequest, getAppointmentRequest } from '../api/appointments'
 import { listLocationsRequest } from '../api/locations'
+import { AppointmentDetailsSkeleton } from '../components/appointments/AppointmentDetailsSkeleton'
 import { ApiAppointment, Location } from '../types'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -35,11 +36,13 @@ export const AppointmentDetails = () => {
   const [cancelReason, setCancelReason] = useState('')
   const [appointment, setAppointment] = useState<ApiAppointment | null>(null)
   const [locations, setLocations] = useState<Location[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
       if (!id) return
+      setIsLoading(true)
       setError(null)
       try {
         const [appt, apiLocations] = await Promise.all([getAppointmentRequest(id), listLocationsRequest()])
@@ -56,6 +59,8 @@ export const AppointmentDetails = () => {
         )
       } catch {
         setError('Unable to load appointment details.')
+      } finally {
+        setIsLoading(false)
       }
     }
     void loadData()
@@ -65,6 +70,8 @@ export const AppointmentDetails = () => {
     () => locations.find((loc) => loc.id === appointment?.location_id) ?? null,
     [appointment?.location_id, locations]
   )
+  
+  const locationName = appointment?.location_name || location?.name
 
   const handleReschedule = () => {
     setOpenedModal(null)
@@ -91,12 +98,8 @@ export const AppointmentDetails = () => {
     )
   }
 
-  if (!appointment) {
-    return (
-      <Container size="lg" py="xl">
-        <Text c="dimmed">Loading appointment...</Text>
-      </Container>
-    )
+  if (isLoading || !appointment) {
+    return <AppointmentDetailsSkeleton />
   }
 
   return (
@@ -126,7 +129,7 @@ export const AppointmentDetails = () => {
             <Group gap="xs">
               <MdLocationOn style={{ fontSize: 24, color: 'teal' }} />
               <div>
-                <Text fw={600}>{location?.name ?? appointment.location_id}</Text>
+                <Text fw={600}>{locationName ?? appointment.location_id}</Text>
                 <Text size="sm" c="dimmed">
                   {[location?.address, location?.city, location?.state].filter(Boolean).join(', ')}
                 </Text>

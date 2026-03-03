@@ -1,14 +1,26 @@
 import { SimpleGrid, Card, Stack, Text, Group, Button } from '@mantine/core'
 import { Location } from '../../types'
 import { MdLocationOn } from 'react-icons/md'
+import { LocationCardSkeleton } from './LocationCardSkeleton'
 
 interface LocationPickerProps {
   locations: Location[]
   selectedId?: string
   onSelect: (locationId: string) => void
+  isLoading?: boolean
 }
 
-export const LocationPicker = ({ locations, selectedId, onSelect }: LocationPickerProps) => {
+export const LocationPicker = ({ locations, selectedId, onSelect, isLoading }: LocationPickerProps) => {
+  if (isLoading) {
+    return (
+      <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+        {Array.from({ length: 3 }).map((_, idx) => (
+          <LocationCardSkeleton key={idx} />
+        ))}
+      </SimpleGrid>
+    )
+  }
+
   return (
     <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
       {locations.map((location) => (

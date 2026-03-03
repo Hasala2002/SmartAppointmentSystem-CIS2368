@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react'
 import { getAppointmentRequest } from '../api/appointments'
 import { StatusBadge } from '../components/appointments/StatusBadge'
 import { EmptyState } from '../components/common/EmptyState'
+import { AppointmentDetailsSkeleton } from '../components/appointments/AppointmentDetailsSkeleton'
 import { Appointment } from '../types'
 import dayjs from 'dayjs'
 import { ArrowBack, Checkmark, Close } from 'react-ionicons'
@@ -43,11 +44,7 @@ export function AppointmentDetails() {
   }, [id])
 
   if (isLoading) {
-    return (
-      <Stack>
-        <Text size="sm" c="dimmed">Loading appointment...</Text>
-      </Stack>
-    )
+    return <AppointmentDetailsSkeleton />
   }
 
   if (!appointment) {
@@ -189,7 +186,7 @@ export function AppointmentDetails() {
                   Date of Birth
                 </Text>
                 <Text size="sm" fw={500}>
-                  {appointment.formResponses.dateOfBirth}
+                  {appointment.patientDob || 'N/A'}
                 </Text>
               </Group>
             </Stack>

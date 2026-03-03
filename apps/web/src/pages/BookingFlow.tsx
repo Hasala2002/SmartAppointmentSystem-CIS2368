@@ -14,12 +14,12 @@ import { faker } from '@faker-js/faker'
 import dayjs from 'dayjs'
 import { getAvailableSlotsRequest, listLocationsRequest } from '../api/locations'
 import { createAppointmentRequest } from '../api/appointments'
+import { useAuth } from '../hooks/useAuth'
 
 const patientSchema = z.object({
-  dateOfBirth: z.string().min(1, 'Date of birth is required'),
-  hasInsurance: z.enum(['yes', 'no']),
+  dentalInsuranceStatus: z.enum(['same_as_last', 'changed', 'no_insurance']),
   lastDentalVisit: z.enum(['within-6-months', '6-12-months', 'over-a-year', 'never']),
-  hasDentalPain: z.enum(['yes', 'no']),
+  hasDentalPain: z.boolean(),
   allergies: z.string().optional(),
   additionalNotes: z.string().optional(),
 })
@@ -28,12 +28,18 @@ type PatientFormData = z.infer<typeof patientSchema>
 
 export const BookingFlow = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [activeStep, setActiveStep] = useState(0)
   const [locations, setLocations] = useState<Location[]>([])
+  const [isLocationsLoading, setIsLocationsLoading] = useState(true)
   const [selectedLocation, setSelectedLocation] = useState<string>()
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedTime, setSelectedTime] = useState<string>()
-  const [slots, setSlots] = useState<ApiTimeSlot[]>([])
+  const [slotsByTime, setSlotsByTime] = useState<{ morning: ApiTimeSlot[]; afternoon: ApiTimeSlot[]; evening: ApiTimeSlot[] }>({
+    morning: [],
+    afternoon: [],
+    evening: [],
+  })
   const [isSlotsLoading, setIsSlotsLoading] = useState(false)
   const [slotsError, setSlotsError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -42,10 +48,9 @@ export const BookingFlow = () => {
     resolver: zodResolver(patientSchema),
     mode: 'onChange',
     defaultValues: {
-      dateOfBirth: '',
-      hasInsurance: 'no',
+      dentalInsuranceStatus: 'same_as_last',
       lastDentalVisit: 'never',
-      hasDentalPain: 'no',
+      hasDentalPain: false,
       allergies: '',
       additionalNotes: '',
     },
@@ -53,17 +58,22 @@ export const BookingFlow = () => {
 
   useEffect(() => {
     const loadLocations = async () => {
-      const data = await listLocationsRequest()
-      setLocations(
-        data.map((loc) => ({
-          id: loc.id,
-          name: loc.name,
-          address: loc.address ?? '',
-          city: loc.city ?? '',
-          state: loc.state ?? '',
-          phone: loc.phone ?? '',
-        }))
-      )
+      setIsLocationsLoading(true)
+      try {
+        const data = await listLocationsRequest()
+        setLocations(
+          data.map((loc) => ({
+            id: loc.id,
+            name: loc.name,
+            address: loc.address ?? '',
+            city: loc.city ?? '',
+            state: loc.state ?? '',
+            phone: loc.phone ?? '',
+          }))
+        )
+      } finally {
+        setIsLocationsLoading(false)
+      }
     }
     void loadLocations()
   }, [])
@@ -71,7 +81,7 @@ export const BookingFlow = () => {
   useEffect(() => {
     const loadSlots = async () => {
       if (!selectedLocation || !selectedDate) {
-        setSlots([])
+        setSlotsByTime({ morning: [], afternoon: [], evening: [] })
         setSlotsError(null)
         return
       }
@@ -82,15 +92,10 @@ export const BookingFlow = () => {
           selectedLocation,
           dayjs(selectedDate).format('YYYY-MM-DD')
         )
-        const allSlots = [
-          ...data.slots_by_time.morning,
-          ...data.slots_by_time.afternoon,
-          ...data.slots_by_time.evening,
-        ]
-        setSlots(allSlots)
+        setSlotsByTime(data.slots_by_time)
       } catch (error) {
         setSlotsError('Failed to load available slots')
-        setSlots([])
+        setSlotsByTime({ morning: [], afternoon: [], evening: [] })
       } finally {
         setIsSlotsLoading(false)
       }
@@ -99,20 +104,15 @@ export const BookingFlow = () => {
   }, [selectedLocation, selectedDate])
 
   const handleDemoFill = () => {
-    const today = new Date()
-    const minYear = today.getFullYear() - 65
-    const maxYear = today.getFullYear() - 18
-    const randomYear = faker.number.int({ min: minYear, max: maxYear })
-    const randomMonth = faker.number.int({ min: 0, max: 11 })
-    const randomDay = faker.number.int({ min: 1, max: 28 })
-    const dob = new Date(randomYear, randomMonth, randomDay)
-    form.setValue('dateOfBirth', dob.toISOString().split('T')[0])
-    form.setValue('hasInsurance', faker.datatype.boolean() ? 'yes' : 'no')
+    form.setValue(
+      'dentalInsuranceStatus',
+      faker.helpers.arrayElement(['same_as_last', 'changed', 'no_insurance'])
+    )
     form.setValue(
       'lastDentalVisit',
       faker.helpers.arrayElement(['within-6-months', '6-12-months', 'over-a-year', 'never'])
     )
-    form.setValue('hasDentalPain', faker.datatype.boolean() ? 'yes' : 'no')
+    form.setValue('hasDentalPain', faker.datatype.boolean())
     form.setValue('allergies', faker.datatype.boolean() ? faker.lorem.sentence() : '')
     form.setValue('additionalNotes', faker.datatype.boolean() ? faker.lorem.sentence() : '')
   }
@@ -133,13 +133,23 @@ export const BookingFlow = () => {
     if (!selectedLocation || !selectedDate || !selectedTime) return
     setSubmitError(null)
 
+    // Build local datetimes (no timezone conversion) to avoid UTC shifting
     const start = dayjs(`${dayjs(selectedDate).format('YYYY-MM-DD')} ${selectedTime}`)
+    const end = start.add(15, 'minutes')
+    const startLocalIso = start.format('YYYY-MM-DDTHH:mm:ss')
+    const endLocalIso = end.format('YYYY-MM-DDTHH:mm:ss')
+    const patient = form.getValues()
 
     try {
       const created = await createAppointmentRequest({
         location_id: selectedLocation,
-        scheduled_start: start.toISOString(),
-        notes: form.getValues('additionalNotes'),
+        scheduled_start: startLocalIso,
+        scheduled_end: endLocalIso,
+        notes: patient.additionalNotes,
+        last_dental_visit: patient.lastDentalVisit,
+        has_dental_pain: patient.hasDentalPain,
+        allergies: patient.allergies,
+        additional_notes: patient.additionalNotes,
       })
       navigate(`/appointments/${created.id}`)
     } catch {
@@ -165,6 +175,7 @@ export const BookingFlow = () => {
               locations={locations}
               selectedId={selectedLocation}
               onSelect={setSelectedLocation}
+              isLoading={isLocationsLoading}
             />
           </Stepper.Step>
 
@@ -182,7 +193,7 @@ export const BookingFlow = () => {
                 <TimeSlotPicker
                   selectedTime={selectedTime}
                   onSelect={setSelectedTime}
-                  slots={slots}
+                  slotsByTime={slotsByTime}
                   isLoading={isSlotsLoading}
                 />
               )}
@@ -205,6 +216,7 @@ export const BookingFlow = () => {
                 })}
                 time={selectedTime}
                 patientInfo={formData as PatientInfo}
+                patientDob={user?.dateOfBirth ?? null}
                 onEdit={setActiveStep}
               />
             )}

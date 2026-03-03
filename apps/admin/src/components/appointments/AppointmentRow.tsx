@@ -10,6 +10,7 @@ interface AppointmentRowProps {
 }
 
 export function AppointmentRow({ appointment, onClick, showLocation }: AppointmentRowProps) {
+  const date = dayjs(appointment.scheduledStart).format('MMM D, YYYY')
   const time = dayjs(appointment.scheduledStart).format('h:mm A')
 
   return (
@@ -28,6 +29,7 @@ export function AppointmentRow({ appointment, onClick, showLocation }: Appointme
         e.currentTarget.style.backgroundColor = 'transparent'
       }}
     >
+      <Table.Td fw={500}>{date}</Table.Td>
       <Table.Td fw={500}>{time}</Table.Td>
       <Table.Td>
         <Stack gap={0}>

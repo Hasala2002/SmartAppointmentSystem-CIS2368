@@ -37,6 +37,7 @@ export function AppointmentsTable({ appointments, onRowClick, showLocation }: Ap
         <Table>
           <Table.Thead>
             <Table.Tr>
+              <Table.Th>Date</Table.Th>
               <Table.Th>Time</Table.Th>
               <Table.Th>Patient</Table.Th>
               {showLocation && <Table.Th>Location</Table.Th>}

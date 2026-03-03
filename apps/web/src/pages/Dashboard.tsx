@@ -2,6 +2,7 @@ import { Container, Title, Text, Button, Stack, Tabs } from '@mantine/core'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { AppointmentCard } from '../components/appointments/AppointmentCard'
+import { AppointmentCardSkeleton } from '../components/appointments/AppointmentCardSkeleton'
 import { Appointment, PatientInfo } from '../types'
 import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
@@ -68,9 +69,14 @@ export const Dashboard = () => {
           </Tabs.List>
 
           <Tabs.Panel value="upcoming" pt="lg">
-            {isLoading && <Text c="dimmed">Loading appointments...</Text>}
             {error && <Text c="red">{error}</Text>}
-            {upcoming.length > 0 ? (
+            {isLoading ? (
+              <Stack gap="md">
+                {Array.from({ length: 3 }).map((_, idx) => (
+                  <AppointmentCardSkeleton key={idx} />
+                ))}
+              </Stack>
+            ) : upcoming.length > 0 ? (
               <Stack gap="md">
                 {upcoming.map((apt) => (
                   <AppointmentCard key={apt.id} appointment={apt} />
@@ -87,9 +93,14 @@ export const Dashboard = () => {
           </Tabs.Panel>
 
           <Tabs.Panel value="past" pt="lg">
-            {isLoading && <Text c="dimmed">Loading appointments...</Text>}
             {error && <Text c="red">{error}</Text>}
-            {past.length > 0 ? (
+            {isLoading ? (
+              <Stack gap="md">
+                {Array.from({ length: 2 }).map((_, idx) => (
+                  <AppointmentCardSkeleton key={idx} />
+                ))}
+              </Stack>
+            ) : past.length > 0 ? (
               <Stack gap="md">
                 {past.map((apt) => (
                   <AppointmentCard key={apt.id} appointment={apt} />

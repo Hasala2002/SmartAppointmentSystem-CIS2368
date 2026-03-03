@@ -1,8 +1,9 @@
-from sqlalchemy import Column, String, Boolean, Enum, DateTime, func
+from sqlalchemy import Column, String, Boolean, Enum, Date, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
 import uuid
 import enum
+from datetime import date
 
 
 class UserRole(str, enum.Enum):
@@ -19,6 +20,8 @@ class User(Base):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     phone = Column(String, nullable=True)
+    date_of_birth = Column(Date, nullable=True)
+    has_dental_insurance = Column(Boolean, nullable=True)
     role = Column(Enum(UserRole, name="user_role"), nullable=False, default=UserRole.customer)
     is_active = Column(Boolean, nullable=False, default=True)
     email_verified = Column(Boolean, nullable=False, default=False)
