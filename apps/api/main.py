@@ -22,13 +22,16 @@ app.add_middleware(
 )
 
 # Router imports
-from app.routers import auth, users, locations, availability, appointments
+from app.routers import auth, users, locations, availability, appointments, queue, ws, notifications
 
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(locations.router)
 app.include_router(availability.router)
 app.include_router(appointments.router)
+app.include_router(queue.router)
+app.include_router(ws.router)
+app.include_router(notifications.router)
 
 @app.get("/health", tags=["Health"])
 async def health_check():

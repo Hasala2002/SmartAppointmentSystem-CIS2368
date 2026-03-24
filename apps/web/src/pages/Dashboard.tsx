@@ -38,8 +38,9 @@ export const Dashboard = () => {
     void loadAppointments()
   }, [])
 
-  const upcoming = appointments.filter((apt) => dayjs(apt.scheduledStart).isAfter(dayjs()))
-  const past = appointments.filter((apt) => !dayjs(apt.scheduledStart).isAfter(dayjs()))
+  const visible = appointments.filter((apt) => apt.status !== 'cancelled')
+  const upcoming = visible.filter((apt) => dayjs(apt.scheduledStart).isAfter(dayjs()))
+  const past = visible.filter((apt) => !dayjs(apt.scheduledStart).isAfter(dayjs()))
 
   return (
     <Container size="lg" py="xl">

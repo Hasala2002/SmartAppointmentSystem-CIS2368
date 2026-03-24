@@ -81,8 +81,9 @@ export const Landing = () => {
       {/* Hero Section */}
       <Box
         style={{
-          background:
-            "linear-gradient(135deg, var(--mantine-color-teal-6) 0%, var(--mantine-color-cyan-6) 100%)",
+          backgroundImage: "url(/hero.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
           minHeight: "80vh",
           display: "flex",
           alignItems: "center",
@@ -90,27 +91,16 @@ export const Landing = () => {
           overflow: "hidden",
         }}
       >
-        {/* Background decoration */}
+        {/* Dark overlay */}
         <Box
           style={{
             position: "absolute",
-            top: "-50%",
-            right: "-10%",
-            width: "600px",
-            height: "600px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.1)",
-          }}
-        />
-        <Box
-          style={{
-            position: "absolute",
-            bottom: "-30%",
-            left: "-5%",
-            width: "400px",
-            height: "400px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.05)",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.75)",
+            zIndex: 0,
           }}
         />
 

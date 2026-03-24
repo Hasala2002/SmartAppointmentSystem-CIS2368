@@ -10,6 +10,7 @@ export interface Appointment {
   scheduledEnd: string
   status: AppointmentStatus
   notes?: string
+  cancellationReason?: string
   createdAt: string
   formResponses: PatientFormResponses
 }

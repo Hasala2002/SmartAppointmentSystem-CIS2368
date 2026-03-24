@@ -21,6 +21,7 @@ interface ApiAppointment {
   has_dental_pain: boolean | null
   allergies: string | null
   additional_notes: string | null
+  cancellation_reason: string | null
 }
 
 const locationById = new Map(LOCATIONS.map((loc) => [loc.id, loc]))
@@ -42,6 +43,7 @@ const mapApiAppointment = (appt: ApiAppointment): Appointment => {
     scheduledEnd: appt.scheduled_end,
     status: appt.status,
     notes: appt.notes ?? '',
+    cancellationReason: appt.cancellation_reason ?? '',
     createdAt: appt.created_at,
     formResponses: {
       dateOfBirth: appt.customer_date_of_birth ?? 'N/A',

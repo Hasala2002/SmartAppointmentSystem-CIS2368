@@ -38,6 +38,7 @@ class AppointmentResponse(BaseModel):
     scheduled_end: datetime
     status: str
     notes: str | None
+    cancellation_reason: str | None = None
     last_dental_visit: str | None
     has_dental_pain: bool | None
     allergies: str | None

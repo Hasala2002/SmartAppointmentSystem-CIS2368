@@ -46,6 +46,7 @@ async def _build_appointment_response(
         scheduled_end=appointment.scheduled_end,
         status=appointment.status.value if hasattr(appointment.status, 'value') else str(appointment.status),
         notes=appointment.notes,
+        cancellation_reason=appointment.cancellation_reason,
         last_dental_visit=getattr(appointment, "last_dental_visit", None),
         has_dental_pain=getattr(appointment, "has_dental_pain", None),
         allergies=getattr(appointment, "allergies", None),
@@ -110,7 +111,7 @@ async def create_appointment(
         customer_id=current_user.id,
         scheduled_start=scheduled_start,
         scheduled_end=scheduled_end,
-        status=AppointmentStatus.pending,
+        status=AppointmentStatus.confirmed,  # Auto-confirm new appointments
         notes=request.notes,
         last_dental_visit=request.last_dental_visit,
         has_dental_pain=request.has_dental_pain,

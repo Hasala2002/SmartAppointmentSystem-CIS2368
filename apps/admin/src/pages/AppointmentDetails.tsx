@@ -20,12 +20,15 @@ import { AppointmentDetailsSkeleton } from '../components/appointments/Appointme
 import { Appointment } from '../types'
 import dayjs from 'dayjs'
 import { ArrowBack, Checkmark, Close } from 'react-ionicons'
+import { queueApi } from '../api/services/queue'
+import { notifications } from '@mantine/notifications'
 
 export function AppointmentDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [appointment, setAppointment] = useState<Appointment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isCheckingIn, setIsCheckingIn] = useState(false)
 
   useEffect(() => {
     const loadAppointment = async () => {
@@ -70,6 +73,31 @@ export function AppointmentDetails() {
   const startTime = dayjs(appointment.scheduledStart).format('h:mm A')
   const endTime = dayjs(appointment.scheduledEnd).format('h:mm A')
   const duration = dayjs(appointment.scheduledEnd).diff(dayjs(appointment.scheduledStart), 'minute')
+
+  const handleCheckIn = async () => {
+    if (!appointment) return
+    
+    setIsCheckingIn(true)
+    try {
+      await queueApi.checkIn(appointment.id)
+      notifications.show({
+        title: 'Success',
+        message: 'Patient checked in successfully',
+        color: 'green'
+      })
+      // Refresh appointment to get updated status
+      const updated = await getAppointmentRequest(appointment.id)
+      setAppointment(updated)
+    } catch (error: any) {
+      notifications.show({
+        title: 'Error',
+        message: error.response?.data?.detail || 'Failed to check in patient',
+        color: 'red'
+      })
+    } finally {
+      setIsCheckingIn(false)
+    }
+  }
 
   // Mock timeline data
   const timeline = [
@@ -270,22 +298,50 @@ export function AppointmentDetails() {
 
       {/* Action Buttons */}
       <Group>
-        <Button onClick={() => console.log('Check In clicked')}>
+        <Button 
+          onClick={handleCheckIn}
+          loading={isCheckingIn}
+          disabled={appointment.status !== 'confirmed'}
+        >
           Check In
         </Button>
-        <Button onClick={() => console.log('Start Service clicked')}>
+        <Button 
+          onClick={() => console.log('Start Service clicked')}
+          disabled={appointment.status !== 'checked_in'}
+        >
           Start Service
         </Button>
-        <Button onClick={() => console.log('Complete clicked')}>
+        <Button 
+          onClick={() => console.log('Complete clicked')}
+          disabled={appointment.status !== 'in_progress'}
+        >
           Complete
         </Button>
-        <Button onClick={() => console.log('Mark No-Show clicked')} variant="light">
+        <Button 
+          onClick={() => console.log('Mark No-Show clicked')} 
+          variant="light"
+          disabled={!['confirmed', 'checked_in'].includes(appointment.status)}
+        >
           Mark No-Show
         </Button>
-        <Button onClick={() => console.log('Cancel clicked')} color="red" variant="light">
+        <Button 
+          onClick={() => console.log('Cancel clicked')} 
+          color="red" 
+          variant="light"
+          disabled={['completed', 'cancelled', 'no_show'].includes(appointment.status)}
+        >
           Cancel
         </Button>
       </Group>
+
+      {appointment.status === 'cancelled' && appointment.cancellationReason && (
+        <Paper p="md" radius="md" withBorder>
+          <Title order={4} mb="sm">
+            Cancellation Reason
+          </Title>
+          <Text size="sm">{appointment.cancellationReason}</Text>
+        </Paper>
+      )}
     </Stack>
   )
 }

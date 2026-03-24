@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from datetime import datetime, timedelta, time
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from uuid import UUID
 
 from app.core.dependencies import get_current_staff_user
@@ -240,7 +241,13 @@ async def get_bookable_slots(
     # Use 15-minute slots for availability display
     slot_duration_mins = 15
 
-    now = datetime.utcnow()
+    # Get current time in the location's timezone; fall back to system local if tzdata missing
+    try:
+        tz = ZoneInfo(location.timezone)
+        now = datetime.now(tz)
+    except ZoneInfoNotFoundError:
+        tz = None
+        now = datetime.now()
     is_today = slot_date == now.date()
 
     slots: list[TimeSlot] = []

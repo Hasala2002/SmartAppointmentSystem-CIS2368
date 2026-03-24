@@ -16,5 +16,8 @@
   },
   "devDependencies": {
     "turbo": "latest"
+  },
+  "dependencies": {
+    "@mantine/notifications": "^8.3.18"
   }
 }

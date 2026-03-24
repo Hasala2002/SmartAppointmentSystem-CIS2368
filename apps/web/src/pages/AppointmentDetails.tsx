@@ -75,7 +75,7 @@ export const AppointmentDetails = () => {
 
   const handleReschedule = () => {
     setOpenedModal(null)
-    navigate('/book')
+    navigate('/book', { state: { rescheduleAppointmentId: id } })
   }
 
   const handleCancel = async () => {

@@ -9,6 +9,7 @@ import { Register } from "./pages/Register";
 import { Dashboard } from "./pages/Dashboard";
 import { BookingFlow } from "./pages/BookingFlow";
 import { AppointmentDetails } from "./pages/AppointmentDetails";
+import { QueueStatus } from "./pages/QueueStatus";
 import "@mantine/dates/styles.css";
 
 const theme = createTheme({
@@ -68,6 +69,7 @@ function App() {
                 path="/appointments/:id"
                 element={<AppointmentDetails />}
               />
+              <Route path="/queue" element={<QueueStatus />} />
             </Routes>
           </Box>
           <Footer />

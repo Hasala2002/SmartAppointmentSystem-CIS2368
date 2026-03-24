@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { LocationPicker } from '../components/booking/LocationPicker'
 import { TimeSlotPicker } from '../components/booking/TimeSlotPicker'
 import { PatientForm } from '../components/booking/PatientForm'
@@ -13,7 +13,7 @@ import { ApiTimeSlot, Location, PatientInfo } from '../types'
 import { faker } from '@faker-js/faker'
 import dayjs from 'dayjs'
 import { getAvailableSlotsRequest, listLocationsRequest } from '../api/locations'
-import { createAppointmentRequest } from '../api/appointments'
+import { createAppointmentRequest, cancelAppointmentRequest } from '../api/appointments'
 import { useAuth } from '../hooks/useAuth'
 
 const patientSchema = z.object({
@@ -28,6 +28,9 @@ type PatientFormData = z.infer<typeof patientSchema>
 
 export const BookingFlow = () => {
   const navigate = useNavigate()
+  const locationState = useLocation()
+  const rescheduleAppointmentId =
+    (locationState.state as { rescheduleAppointmentId?: string } | null)?.rescheduleAppointmentId
   const { user } = useAuth()
   const [activeStep, setActiveStep] = useState(0)
   const [locations, setLocations] = useState<Location[]>([])
@@ -151,6 +154,14 @@ export const BookingFlow = () => {
         allergies: patient.allergies,
         additional_notes: patient.additionalNotes,
       })
+      if (rescheduleAppointmentId) {
+        // cancel old appointment so it disappears from customer view
+        try {
+          await cancelAppointmentRequest(rescheduleAppointmentId, { reason: 'Rescheduled' })
+        } catch {
+          /* ignore */
+        }
+      }
       navigate(`/appointments/${created.id}`)
     } catch {
       setSubmitError('Could not create appointment. Please try another slot.')
@@ -195,6 +206,7 @@ export const BookingFlow = () => {
                   onSelect={setSelectedTime}
                   slotsByTime={slotsByTime}
                   isLoading={isSlotsLoading}
+                  selectedDate={selectedDate}
                 />
               )}
             </Stack>

@@ -1,4 +1,4 @@
-import { Stack, NavLink, Group, Badge, ScrollArea, Divider } from '@mantine/core'
+import { Stack, NavLink, Badge, ScrollArea } from '@mantine/core'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Grid,
@@ -32,6 +32,13 @@ export function Sidebar() {
           active={isActive('/appointments')}
           onClick={() => navigate('/appointments')}
           fw={isActive('/appointments') ? 600 : 400}
+        />
+        <NavLink
+          label="Queue"
+          leftSection={<People color="currentColor" />}
+          active={isActive('/queue')}
+          onClick={() => navigate('/queue')}
+          fw={isActive('/queue') ? 600 : 400}
         />
       </Stack>
     </ScrollArea>

@@ -1,15 +1,17 @@
 import { Stack, Text, Button, SimpleGrid, Divider } from '@mantine/core'
 import { ApiTimeSlot } from '../../types'
 import { TimeSlotSkeleton } from './TimeSlotSkeleton'
+import dayjs from 'dayjs'
 
 interface TimeSlotPickerProps {
   selectedTime?: string
   onSelect: (time: string) => void
   slotsByTime: { morning: ApiTimeSlot[]; afternoon: ApiTimeSlot[]; evening: ApiTimeSlot[] }
   isLoading: boolean
+  selectedDate?: Date | null
 }
 
-export const TimeSlotPicker = ({ selectedTime, onSelect, slotsByTime, isLoading }: TimeSlotPickerProps) => {
+export const TimeSlotPicker = ({ selectedTime, onSelect, slotsByTime, isLoading, selectedDate }: TimeSlotPickerProps) => {
   if (isLoading) {
     return <TimeSlotSkeleton />
   }
@@ -18,6 +20,15 @@ export const TimeSlotPicker = ({ selectedTime, onSelect, slotsByTime, isLoading 
 
   if (!hasAnySlots) {
     return <Text c="dimmed">No available slots for this date.</Text>
+  }
+
+  const isSlotPassed = (time: string): boolean => {
+    if (!selectedDate) return false
+    const isToday = dayjs(selectedDate).isSame(dayjs(), 'day')
+    if (!isToday) return false
+    const now = dayjs()
+    const slotTime = dayjs(time, 'HH:mm')
+    return slotTime.isBefore(now)
   }
 
   const renderShiftSection = (title: string, slots: ApiTimeSlot[]) => {
@@ -29,17 +40,21 @@ export const TimeSlotPicker = ({ selectedTime, onSelect, slotsByTime, isLoading 
           {title}
         </Text>
         <SimpleGrid cols={{ base: 2, sm: 4, md: 6 }} spacing="sm" mb="md">
-          {slots.map((slot) => (
-            <Button
-              key={slot.start}
-              variant={selectedTime === slot.start ? 'filled' : 'light'}
-              disabled={!slot.available}
-              onClick={() => onSelect(slot.start)}
-              size="sm"
-            >
-              {slot.start}
-            </Button>
-          ))}
+          {slots.map((slot) => {
+            const isPassed = isSlotPassed(slot.start)
+            return (
+              <Button
+                key={slot.start}
+                variant={selectedTime === slot.start ? 'filled' : 'light'}
+                disabled={!slot.available || isPassed}
+                onClick={() => onSelect(slot.start)}
+                size="sm"
+                title={isPassed ? 'This time has already passed' : ''}
+              >
+                {slot.start}
+              </Button>
+            )
+          })}
         </SimpleGrid>
       </div>
     )

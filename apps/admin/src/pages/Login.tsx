@@ -8,7 +8,6 @@ import {
   Title,
   Text,
   Group,
-  Checkbox,
 } from "@mantine/core";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +18,6 @@ const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {},
   );
@@ -94,12 +92,6 @@ const Login = () => {
                 error={errors.password}
               />
 
-              <Checkbox
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.currentTarget.checked)}
-                label="Remember me"
-                size="sm"
-              />
 
               <Button type="submit" fullWidth color="teal" size="md">
                 Sign In

@@ -1,10 +1,12 @@
-import { Group, Button, Menu, Avatar, Container, Box, Image, Text } from "@mantine/core";
+import { Group, Button, Menu, Avatar, Container, Box, Image, Text, Burger, Drawer, Stack } from "@mantine/core";
+import { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [menuOpened, setMenuOpened] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -41,7 +43,8 @@ export const Navbar = () => {
           </Group>
         </RouterLink>
 
-        <Group gap="md">
+        <Group gap="md" hide={{ base: "xs", sm: "xs", md: "none" }}>
+          {/* Desktop menu */}
           {user ? (
             <>
               <Button variant="subtle" component={RouterLink} to="/dashboard">
@@ -49,6 +52,9 @@ export const Navbar = () => {
               </Button>
               <Button variant="subtle" component={RouterLink} to="/book">
                 Book
+              </Button>
+              <Button variant="subtle" component={RouterLink} to="/queue">
+                Queue Status
               </Button>
               <Menu>
                 <Menu.Target>
@@ -81,7 +87,89 @@ export const Navbar = () => {
             </>
           )}
         </Group>
+
+        {/* Mobile burger menu */}
+        <Burger
+          opened={menuOpened}
+          onClick={() => setMenuOpened(!menuOpened)}
+          hiddenFrom="md"
+          size="sm"
+        />
       </Container>
+
+      {/* Mobile drawer */}
+      <Drawer
+        opened={menuOpened}
+        onClose={() => setMenuOpened(false)}
+        title="Menu"
+        position="right"
+        size="xs"
+      >
+        <Stack gap="md">
+          {user ? (
+            <>
+              <Button
+                fullWidth
+                variant="subtle"
+                component={RouterLink}
+                to="/dashboard"
+                onClick={() => setMenuOpened(false)}
+              >
+                Dashboard
+              </Button>
+              <Button
+                fullWidth
+                variant="subtle"
+                component={RouterLink}
+                to="/book"
+                onClick={() => setMenuOpened(false)}
+              >
+                Book
+              </Button>
+              <Button
+                fullWidth
+                variant="subtle"
+                component={RouterLink}
+                to="/queue"
+                onClick={() => setMenuOpened(false)}
+              >
+                Queue Status
+              </Button>
+              <Button
+                fullWidth
+                color="red"
+                variant="light"
+                onClick={() => {
+                  setMenuOpened(false);
+                  handleLogout();
+                }}
+              >
+                Logout
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                fullWidth
+                variant="default"
+                component={RouterLink}
+                to="/login"
+                onClick={() => setMenuOpened(false)}
+              >
+                Login
+              </Button>
+              <Button
+                fullWidth
+                component={RouterLink}
+                to="/register"
+                onClick={() => setMenuOpened(false)}
+              >
+                Sign Up
+              </Button>
+            </>
+          )}
+        </Stack>
+      </Drawer>
     </Box>
   );
 };

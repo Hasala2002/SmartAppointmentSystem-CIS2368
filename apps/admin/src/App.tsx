@@ -1,6 +1,8 @@
 import { MantineProvider, createTheme } from '@mantine/core'
+import { Notifications } from '@mantine/notifications'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import '@mantine/core/styles.css'
+import '@mantine/notifications/styles.css'
 import { AdminShell } from './components/layout/AdminShell'
 import { Login } from './pages/Login'
 import { ForgotPassword } from './pages/ForgotPassword'
@@ -38,6 +40,7 @@ function App() {
   const isStaff = isAuthenticated && user?.role === 'staff'
   return (
     <MantineProvider theme={theme}>
+      <Notifications />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />

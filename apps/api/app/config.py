@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = True
     CORS_ORIGINS: str = '["http://localhost:5173","http://localhost:5174"]'
+    
+    # VAPID Keys for Push Notifications
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_EMAIL: str = "mailto:admin@lonestardental.com"
 
     @property
     def cors_origins_list(self) -> List[str]:
