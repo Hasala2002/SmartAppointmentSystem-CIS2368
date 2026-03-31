@@ -4,47 +4,107 @@ services:
   # PostgreSQL Database
   db:
     image: postgres:15-alpine
+    container_name: appointment-db
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: appointment_system
+      POSTGRES_DB: appointmentdb
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - appointment-network
 
   # FastAPI Backend
   api:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
+    container_name: appointment-api
+    restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/appointment_system
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: postgres
-    ports:
-      - "8000:8000"
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-super-secret-key-change-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: ${DEBUG:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["https://${WEB_DOMAIN}","https://${ADMIN_DOMAIN}"]}
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./schema.sql:/app/schema.sql
+    networks:
+      - appointment-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # React Frontend
+  # Web Frontend (Customer Portal)
   web:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
+    container_name: appointment-web
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: https://${API_DOMAIN}
+    networks:
+      - appointment-network
+
+  # Admin Frontend
+  admin:
+    build:
+      context: ./apps/admin
+      dockerfile: Dockerfile
+    container_name: appointment-admin
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: https://${API_DOMAIN}
+    networks:
+      - appointment-network
+
+  # Caddy Reverse Proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: appointment-caddy
+    restart: unless-stopped
     ports:
-      - "3000:80"
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+      WEB_DOMAIN: ${WEB_DOMAIN}
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       - api
+      - web
+      - admin
+    networks:
+      - appointment-network
 
 volumes:
   postgres_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  appointment-network:
+    driver: bridge
