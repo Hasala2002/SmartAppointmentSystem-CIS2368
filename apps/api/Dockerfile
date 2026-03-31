@@ -20,9 +20,6 @@ COPY main.py .
 COPY init_db.py .
 COPY entrypoint.sh .
 
-# Copy schema.sql from root
-COPY ../../schema.sql /app/schema.sql
-
 # Make entrypoint executable
 RUN chmod +x entrypoint.sh
 
