@@ -9,11 +9,13 @@ import {
   Divider,
   Badge,
   Timeline,
-  ThemeIcon
+  ThemeIcon,
+  Modal,
+  Textarea
 } from '@mantine/core'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { getAppointmentRequest } from '../api/appointments'
+import { getAppointmentRequest, cancelAppointmentRequest } from '../api/appointments'
 import { StatusBadge } from '../components/appointments/StatusBadge'
 import { EmptyState } from '../components/common/EmptyState'
 import { AppointmentDetailsSkeleton } from '../components/appointments/AppointmentDetailsSkeleton'
@@ -29,6 +31,9 @@ export function AppointmentDetails() {
   const [appointment, setAppointment] = useState<Appointment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCheckingIn, setIsCheckingIn] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancellationReason, setCancellationReason] = useState('')
+  const [isCancelling, setIsCancelling] = useState(false)
 
   useEffect(() => {
     const loadAppointment = async () => {
@@ -96,6 +101,33 @@ export function AppointmentDetails() {
       })
     } finally {
       setIsCheckingIn(false)
+    }
+  }
+
+  const handleCancelAppointment = async () => {
+    if (!appointment) return
+    
+    setIsCancelling(true)
+    try {
+      await cancelAppointmentRequest(appointment.id, cancellationReason || 'Cancelled by staff')
+      notifications.show({
+        title: 'Success',
+        message: 'Appointment cancelled successfully',
+        color: 'green'
+      })
+      // Refresh appointment to get updated status
+      const updated = await getAppointmentRequest(appointment.id)
+      setAppointment(updated)
+      setShowCancelModal(false)
+      setCancellationReason('')
+    } catch (error: any) {
+      notifications.show({
+        title: 'Error',
+        message: error.response?.data?.detail || 'Failed to cancel appointment',
+        color: 'red'
+      })
+    } finally {
+      setIsCancelling(false)
     }
   }
 
@@ -325,7 +357,7 @@ export function AppointmentDetails() {
           Mark No-Show
         </Button>
         <Button 
-          onClick={() => console.log('Cancel clicked')} 
+          onClick={() => setShowCancelModal(true)} 
           color="red" 
           variant="light"
           disabled={['completed', 'cancelled', 'no_show'].includes(appointment.status)}
@@ -342,6 +374,47 @@ export function AppointmentDetails() {
           <Text size="sm">{appointment.cancellationReason}</Text>
         </Paper>
       )}
+
+      {/* Cancel Confirmation Modal */}
+      <Modal
+        opened={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        title="Cancel Appointment"
+        centered
+      >
+        <Stack gap="md">
+          <Text>
+            Are you sure you want to cancel this appointment for {appointment.patientName}?
+          </Text>
+          
+          <Textarea
+            label="Cancellation Reason (Optional)"
+            placeholder="Enter reason for cancellation..."
+            value={cancellationReason}
+            onChange={(e) => setCancellationReason(e.currentTarget.value)}
+            minRows={3}
+          />
+
+          <Group justify="flex-end">
+            <Button 
+              variant="light" 
+              onClick={() => {
+                setShowCancelModal(false)
+                setCancellationReason('')
+              }}
+            >
+              Keep Appointment
+            </Button>
+            <Button 
+              color="red" 
+              onClick={handleCancelAppointment}
+              loading={isCancelling}
+            >
+              Cancel Appointment
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Stack>
   )
 }

@@ -1,3 +1,20 @@
+// Service worker version
+const SW_VERSION = '1.0.0'
+
+// Install event
+self.addEventListener('install', (event) => {
+  console.log(`[SW ${SW_VERSION}] Installing...`)
+  // Skip waiting to activate immediately
+  self.skipWaiting()
+})
+
+// Activate event
+self.addEventListener('activate', (event) => {
+  console.log(`[SW ${SW_VERSION}] Activating...`)
+  // Claim all clients immediately
+  event.waitUntil(self.clients.claim())
+})
+
 // Push notification handler
 self.addEventListener('push', (event) => {
   console.log('[SW] Push received:', event)

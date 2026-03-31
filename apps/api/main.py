@@ -13,9 +13,10 @@ app = FastAPI(
 )
 
 # CORS Configuration
+# Allow all origins in development for mobile testing
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=["*"] if settings.APP_ENV == "development" else settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

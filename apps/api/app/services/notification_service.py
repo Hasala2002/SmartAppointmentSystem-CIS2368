@@ -155,6 +155,8 @@ class NotificationService:
         Returns True on success, False on error, None if subscription expired.
         """
         try:
+            # Add TTL (Time To Live) for better compatibility with WNS and other services
+            # TTL is in seconds - 24 hours = 86400 seconds
             webpush(
                 subscription_info={
                     "endpoint": subscription.endpoint,
@@ -165,23 +167,35 @@ class NotificationService:
                 },
                 data=payload,
                 vapid_private_key=settings.VAPID_PRIVATE_KEY,
-                vapid_claims={"sub": settings.VAPID_EMAIL}
+                vapid_claims={"sub": settings.VAPID_EMAIL},
+                ttl=86400,  # 24 hours
+                timeout=10  # 10 second timeout
             )
+            print(f"[Push] Successfully sent to {subscription.endpoint[:50]}...")
             return True
         except WebPushException as e:
-            print(f"[Push] Error sending to {subscription.endpoint[:50]}...: {e}")
+            error_msg = str(e)
+            status_code = e.response.status_code if e.response else None
+            print(f"[Push] WebPushException (status {status_code}): {error_msg}")
+            print(f"[Push] Endpoint: {subscription.endpoint[:80]}")
+            if e.response:
+                print(f"[Push] Response body: {e.response.text if hasattr(e.response, 'text') else 'N/A'}")
             
             # 410 Gone = subscription expired
-            if e.response and e.response.status_code == 410:
+            if status_code == 410:
                 return None
             
-            # 404 Not Found = subscription invalid
-            if e.response and e.response.status_code == 404:
+            # 404 Not Found = subscription invalid  
+            if status_code == 404:
                 return None
+            
+            # 400 Bad Request - could be WNS incompatibility, but don't fail completely
+            if status_code == 400:
+                print(f"[Push] 400 error - possibly WNS incompatibility. Keeping subscription active.")
             
             return False
         except Exception as e:
-            print(f"[Push] Unexpected error: {e}")
+            print(f"[Push] Unexpected error: {type(e).__name__}: {e}")
             return False
 
 

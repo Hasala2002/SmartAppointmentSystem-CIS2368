@@ -64,13 +64,14 @@ export const QueueStatus = () => {
     const fetchQueuePosition = async () => {
       try {
         const response = await apiClient.get('/queue/my-position')
-        setQueueEntry(response.data)
-        // Get location_id from the queue entry or need to fetch separately
-        // For now, assume location_id is not in the response, so we need to handle this
+        const data = response.data
+        setQueueEntry(data)
+        setLocationId(data.location_id) // Set location_id for WebSocket connection
       } catch (err: any) {
         if (err.response?.status === 404) {
           // Not in queue
           setQueueEntry(null)
+          setLocationId(null)
         }
       } finally {
         setIsLoading(false)
@@ -128,7 +129,8 @@ export const QueueStatus = () => {
     )
   }
 
-  if (!queueEntry) {
+  // Show "Not in Queue" if no entry or if status is completed/left
+  if (!queueEntry || ['completed', 'left'].includes(queueEntry.status)) {
     return (
       <Container size="sm" py="xl">
         <Paper p="xl" withBorder radius="lg" ta="center">

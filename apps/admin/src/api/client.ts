@@ -1,7 +1,11 @@
 import axios from 'axios'
 
+// Use current host for API calls to support mobile testing
+const apiHost = window.location.hostname
+const apiBaseURL = `http://${apiHost}:8000/api/v1`
+
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: apiBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },

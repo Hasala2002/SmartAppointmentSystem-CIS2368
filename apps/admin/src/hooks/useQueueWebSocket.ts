@@ -47,7 +47,9 @@ export const useQueueWebSocket = (locationId: string | null) => {
       wsRef.current.close()
     }
 
-    const wsUrl = `ws://localhost:8000/ws/queue/${locationId}`
+    // Use current host for WebSocket to support mobile testing
+    const wsHost = window.location.hostname
+    const wsUrl = `ws://${wsHost}:8000/ws/queue/${locationId}`
     console.log('[WS Admin] Connecting to:', wsUrl)
 
     const ws = new WebSocket(wsUrl)

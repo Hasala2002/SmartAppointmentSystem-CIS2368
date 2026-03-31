@@ -7,17 +7,15 @@ import './index.css'
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      // Register the Vite PWA service worker
-      const registration = await navigator.serviceWorker.register('/sw.js', {
+      // Register the service worker
+      const registration = await navigator.serviceWorker.register('/sw-push.js', {
         scope: '/'
       })
-      console.log('[SW] Registered:', registration.scope)
-
-      // Also register custom push handler
-      await navigator.serviceWorker.register('/sw-push.js', {
-        scope: '/'
-      })
-      console.log('[SW] Push handler registered')
+      console.log('[SW] Service worker registered:', registration.scope)
+      
+      // Wait for service worker to be ready
+      await navigator.serviceWorker.ready
+      console.log('[SW] Service worker is ready')
     } catch (err) {
       console.error('[SW] Registration failed:', err)
     }

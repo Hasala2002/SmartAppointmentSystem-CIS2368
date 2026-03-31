@@ -289,14 +289,34 @@ async def cancel_appointment(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Cancel an appointment"""
+    """Cancel an appointment - can be done by customer or staff"""
     result = await db.execute(select(Appointment).where(Appointment.id == appointment_id))
     appointment = result.scalar_one_or_none()
     
-    if not appointment or appointment.customer_id != current_user.id:
+    if not appointment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Appointment not found"
+        )
+    
+    # Check authorization: customer can cancel their own, staff can cancel their location's
+    staff_result = await db.execute(
+        select(Staff).where(Staff.user_id == current_user.id)
+    )
+    staff = staff_result.scalar_one_or_none()
+    
+    if not staff and appointment.customer_id != current_user.id:
+        # Not staff and not the customer
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Appointment not found"
+        )
+    
+    if staff and not staff.has_global_access and appointment.location_id != staff.location_id:
+        # Location-scoped staff trying to cancel appointment from different location
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to cancel this appointment"
         )
     
     if appointment.status == AppointmentStatus.cancelled:
@@ -313,9 +333,38 @@ async def cancel_appointment(
     
     appointment.status = AppointmentStatus.cancelled
     appointment.cancellation_reason = request.reason
+    appointment.updated_at = datetime.utcnow()
+    
+    # Remove from queue if checked in
+    from app.models.queue_entry import QueueEntry, QueueStatus
+    from app.websocket.handlers import broadcast_queue_update
+    
+    queue_result = await db.execute(
+        select(QueueEntry).where(
+            and_(
+                QueueEntry.appointment_id == appointment_id,
+                QueueEntry.status.in_([QueueStatus.waiting, QueueStatus.called, QueueStatus.serving])
+            )
+        )
+    )
+    queue_entry = queue_result.scalar_one_or_none()
+    if queue_entry:
+        queue_entry.status = QueueStatus.left
+        queue_entry.updated_at = datetime.utcnow()
+        
+        # Recalculate positions for remaining entries
+        from app.services.queue_service import QueueService
+        queue_service = QueueService(db)
+        await queue_service._recalculate_positions(appointment.location_id)
     
     await db.commit()
     await db.refresh(appointment)
     
+    # Broadcast queue update if entry was removed
+    if queue_entry:
+        await broadcast_queue_update(str(appointment.location_id), db)
+    
     location_name = await _get_location_name(appointment.location_id, db)
-    return await _build_appointment_response(appointment, location_name, current_user)
+    customer_result = await db.execute(select(User).where(User.id == appointment.customer_id))
+    customer = customer_result.scalar_one_or_none()
+    return await _build_appointment_response(appointment, location_name, customer)

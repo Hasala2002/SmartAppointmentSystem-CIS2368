@@ -25,6 +25,8 @@ class QueueEntryResponse(BaseModel):
         from_attributes = True
 
 class QueuePositionResponse(BaseModel):
+    id: UUID
+    location_id: UUID
     queue_number: str
     position: int
     estimated_wait_mins: int

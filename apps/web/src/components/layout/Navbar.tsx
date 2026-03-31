@@ -43,7 +43,7 @@ export const Navbar = () => {
           </Group>
         </RouterLink>
 
-        <Group gap="md" hide={{ base: "xs", sm: "xs", md: "none" }}>
+        <Group gap="md" visibleFrom="md">
           {/* Desktop menu */}
           {user ? (
             <>

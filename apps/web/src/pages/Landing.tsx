@@ -104,7 +104,7 @@ export const Landing = () => {
           }}
         />
 
-        <Container size="lg" style={{ position: "relative", zIndex: 1 }}>
+        <Container size="lg" style={{ position: "relative", zIndex: 1 }} py={{ base: "xl", md: 0 }}>
           <Stack gap="xl" align="center" ta="center">
             <Badge size="lg" variant="white" color="teal">
               Now Accepting New Patients
@@ -125,7 +125,7 @@ export const Landing = () => {
               Experience gentle, personalized dental care for the whole family.
             </Text>
 
-            <Group gap="md" mt="md">
+            <Group gap="md" mt="md" wrap justify="center">
               <Button
                 size="xl"
                 color="white"

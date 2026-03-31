@@ -11,10 +11,11 @@ class QueueService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def generate_queue_number(self, location_id: UUID) -> str:
+    async def generate_queue_number(self, location_id: UUID) -> int:
         """
-        Generate queue number like A001, A002, etc.
+        Generate queue number like 1, 2, 3, etc.
         Resets daily per location.
+        Returns the integer queue number (not the formatted string).
         """
         today_start = datetime.combine(date.today(), datetime.min.time())
         
@@ -31,7 +32,24 @@ class QueueService:
         max_num = result.scalar() or 0
         next_num = max_num + 1
         
-        return f"A{next_num:03d}"  # A001, A002, etc.
+        # Double-check this number doesn't exist (to avoid race conditions)
+        # If it does, try the next available number
+        while True:
+            check_result = await self.db.execute(
+                select(QueueEntry)
+                .where(
+                    and_(
+                        QueueEntry.location_id == location_id,
+                        QueueEntry.queue_number == next_num
+                    )
+                )
+            )
+            existing = check_result.scalar_one_or_none()
+            if not existing:
+                break
+            next_num += 1
+        
+        return next_num
 
     async def get_next_position(self, location_id: UUID) -> int:
         """Get the next position in queue for a location."""
@@ -121,7 +139,7 @@ class QueueService:
             location_id=appointment.location_id,
             customer_id=actual_customer_id,
             appointment_id=appointment_id,
-            queue_number=int(queue_number[1:]),  # Store as int (strip 'A')
+            queue_number=queue_number,  # Already an int
             position=position,
             estimated_wait_mins=wait_time,
             status=QueueStatus.waiting,
@@ -173,7 +191,7 @@ class QueueService:
             location_id=location_id,
             customer_id=customer_id,
             appointment_id=None,  # No appointment for walk-ins
-            queue_number=int(queue_number[1:]),
+            queue_number=queue_number,  # Already an int
             position=position,
             estimated_wait_mins=wait_time,
             status=QueueStatus.waiting,
@@ -193,11 +211,14 @@ class QueueService:
         customer_id: UUID,
         location_id: Optional[UUID] = None
     ) -> Optional[QueueEntry]:
-        """Get customer's current queue entry."""
+        """Get customer's current queue entry (today only)."""
+        today_start = datetime.combine(date.today(), datetime.min.time())
+        
         query = select(QueueEntry).where(
             and_(
                 QueueEntry.customer_id == customer_id,
-                QueueEntry.status.in_([QueueStatus.waiting, QueueStatus.called, QueueStatus.serving])
+                QueueEntry.status.in_([QueueStatus.waiting, QueueStatus.called, QueueStatus.serving]),
+                QueueEntry.created_at >= today_start  # Only today's entries
             )
         )
         

@@ -107,6 +107,8 @@ async def get_my_position(
         raise HTTPException(status_code=404, detail="Not currently in any queue")
     
     return QueuePositionResponse(
+        id=entry.id,
+        location_id=entry.location_id,
         queue_number=format_queue_number(entry.queue_number),
         position=entry.position,
         estimated_wait_mins=entry.estimated_wait_mins or 0,

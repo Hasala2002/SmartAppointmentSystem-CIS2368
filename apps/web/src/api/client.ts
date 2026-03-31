@@ -1,7 +1,10 @@
 import axios from 'axios'
 
+// Support ngrok URL via environment variable, otherwise use current host
+const apiBaseURL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000/api/v1`
+
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:8000/api/v1',
+  baseURL: apiBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },

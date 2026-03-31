@@ -49,7 +49,9 @@ export const useQueueWebSocket = (locationId: string | null, customerId?: string
       wsRef.current.close()
     }
 
-    const wsUrl = `ws://localhost:8000/ws/queue/${locationId}`
+    // Support ngrok WebSocket URL via environment variable
+    const wsBaseUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:8000`
+    const wsUrl = `${wsBaseUrl}/ws/queue/${locationId}`
     console.log('[WS] Connecting to:', wsUrl)
 
     const ws = new WebSocket(wsUrl)

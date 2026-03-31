@@ -1,0 +1,13 @@
+tunnel: d98f43e1-9252-4b65-bb22-129968def222
+
+ingress:
+  # API route
+  - hostname: api.cis2368.hasala.me
+    service: http://localhost:8000
+  
+  # Web app route
+  - hostname: web.cis2368.hasala.me
+    service: http://localhost:5173
+  
+  # Catch-all rule (required)
+  - service: http_status:404

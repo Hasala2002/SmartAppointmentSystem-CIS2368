@@ -67,3 +67,14 @@ export const getAppointmentRequest = async (id: string): Promise<Appointment> =>
   const { data } = await apiClient.get<ApiAppointment>(`/appointments/${id}`)
   return mapApiAppointment(data)
 }
+
+export const cancelAppointmentRequest = async (
+  id: string,
+  reason?: string
+): Promise<Appointment> => {
+  const { data } = await apiClient.patch<ApiAppointment>(
+    `/appointments/${id}/cancel`,
+    { reason: reason || 'Cancelled by staff' }
+  )
+  return mapApiAppointment(data)
+}

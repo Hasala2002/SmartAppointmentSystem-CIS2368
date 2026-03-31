@@ -84,10 +84,19 @@ export function Queue() {
   const handleCallNext = async () => {
     if (!selectedLocation) return
     setLoading(true)
+    setError(null)
     try {
-      await apiClient.post(`/queue/call-next/${selectedLocation}`)
+      const response = await apiClient.post(`/queue/call-next/${selectedLocation}`)
+      console.log('[Queue] Call next response:', response.data)
+      // Success - queue state will update via WebSocket
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to call next customer')
+      console.error('[Queue] Call next error:', err)
+      // Only show error if it's a real API error (not network timing issues)
+      if (err.response) {
+        setError(err.response?.data?.detail || 'Failed to call next customer')
+      } else {
+        console.warn('[Queue] Network error but operation may have succeeded')
+      }
     } finally {
       setLoading(false)
     }
@@ -95,9 +104,12 @@ export function Queue() {
 
   const handleStartServing = async (entryId: string) => {
     setLoading(true)
+    setError(null)
     try {
       await apiClient.post(`/queue/${entryId}/start-serving`)
+      console.log('[Queue] Start serving successful')
     } catch (err: any) {
+      console.error('[Queue] Start serving error:', err)
       setError(err.response?.data?.detail || 'Failed to start serving')
     } finally {
       setLoading(false)
@@ -106,9 +118,12 @@ export function Queue() {
 
   const handleComplete = async (entryId: string) => {
     setLoading(true)
+    setError(null)
     try {
       await apiClient.post(`/queue/${entryId}/complete`)
+      console.log('[Queue] Complete successful')
     } catch (err: any) {
+      console.error('[Queue] Complete error:', err)
       setError(err.response?.data?.detail || 'Failed to complete serving')
     } finally {
       setLoading(false)
@@ -117,9 +132,12 @@ export function Queue() {
 
   const handleNoShow = async (entryId: string) => {
     setLoading(true)
+    setError(null)
     try {
       await apiClient.post(`/queue/${entryId}/no-show`)
+      console.log('[Queue] No-show marked successfully')
     } catch (err: any) {
+      console.error('[Queue] No-show error:', err)
       setError(err.response?.data?.detail || 'Failed to mark no-show')
     } finally {
       setLoading(false)

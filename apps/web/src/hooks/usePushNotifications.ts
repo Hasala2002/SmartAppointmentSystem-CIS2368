@@ -20,14 +20,20 @@ export const usePushNotifications = () => {
 
   // Check if push is supported
   useEffect(() => {
-    const isSupported = 'serviceWorker' in navigator && 'PushManager' in window
+    const hasServiceWorker = 'serviceWorker' in navigator
+    const hasPushManager = 'PushManager' in window
+    const isSupported = hasServiceWorker && hasPushManager
+
+    console.log('[Push] Support check:', { hasServiceWorker, hasPushManager, isSupported })
 
     if (!isSupported) {
+      const reason = !hasServiceWorker ? 'Service Workers not supported' : 'Push API not supported'
+      console.log('[Push] Not supported:', reason)
       setState(prev => ({
         ...prev,
         isSupported: false,
         isLoading: false,
-        error: 'Push notifications not supported in this browser'
+        error: `Push notifications not supported: ${reason}`
       }))
       return
     }
@@ -66,8 +72,12 @@ export const usePushNotifications = () => {
     setState(prev => ({ ...prev, isLoading: true, error: null }))
 
     try {
+      console.log('[Push] Starting subscription process...')
+      
       // Request notification permission
+      console.log('[Push] Requesting permission...')
       const permission = await Notification.requestPermission()
+      console.log('[Push] Permission result:', permission)
       
       if (permission !== 'granted') {
         setState(prev => ({
@@ -80,23 +90,35 @@ export const usePushNotifications = () => {
       }
 
       // Get VAPID public key from backend
+      console.log('[Push] Fetching VAPID key...')
       const vapidResponse = await apiClient.get('/notifications/vapid-public-key')
       const vapidPublicKey = vapidResponse.data.public_key
+      console.log('[Push] VAPID key received')
 
       // Convert VAPID key to Uint8Array
       const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey)
 
       // Get service worker registration
-      const registration = await navigator.serviceWorker.ready
+      console.log('[Push] Waiting for service worker...')
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Service worker timeout')), 10000)
+        )
+      ]) as ServiceWorkerRegistration
+      console.log('[Push] Service worker ready')
 
       // Subscribe to push
+      console.log('[Push] Subscribing to push manager...')
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey
       })
+      console.log('[Push] Subscription created')
 
       // Send subscription to backend
       const subscriptionJson = subscription.toJSON()
+      console.log('[Push] Sending subscription to backend...')
       
       await apiClient.post('/notifications/subscribe', {
         endpoint: subscriptionJson.endpoint,
@@ -106,6 +128,7 @@ export const usePushNotifications = () => {
         },
         user_agent: navigator.userAgent
       })
+      console.log('[Push] Subscription saved successfully')
 
       setState({
         isSupported: true,
@@ -117,11 +140,12 @@ export const usePushNotifications = () => {
 
       return true
     } catch (err: any) {
-      console.error('Error subscribing to push:', err)
+      console.error('[Push] Subscription error:', err)
+      const errorMessage = err.response?.data?.detail || err.message || 'Failed to subscribe to notifications'
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: err.message || 'Failed to subscribe to notifications'
+        error: errorMessage
       }))
       return false
     }
@@ -166,15 +190,20 @@ export const usePushNotifications = () => {
 
   // Send test notification
   const sendTest = useCallback(async () => {
+    console.log('[Push] Sending test notification...')
     try {
-      await apiClient.post('/notifications/test', {
+      const response = await apiClient.post('/notifications/test', {
         title: 'Test Notification',
         body: 'Push notifications are working!',
         url: '/dashboard'
       })
+      console.log('[Push] Test notification sent:', response.data)
+      alert('Test notification sent! Check your notifications.')
       return true
-    } catch (err) {
-      console.error('Error sending test notification:', err)
+    } catch (err: any) {
+      console.error('[Push] Error sending test notification:', err)
+      const errorMsg = err.response?.data?.detail || err.message || 'Failed to send test notification'
+      alert(`Error: ${errorMsg}`)
       return false
     }
   }, [])
