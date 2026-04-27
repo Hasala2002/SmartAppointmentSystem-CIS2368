@@ -403,6 +403,15 @@ class QueueService:
         entry.status = QueueStatus.left
         entry.updated_at = datetime.utcnow()
         
+        # Update linked appointment to no-show if exists
+        if entry.appointment_id:
+            appt_result = await self.db.execute(
+                select(Appointment).where(Appointment.id == entry.appointment_id)
+            )
+            appointment = appt_result.scalar_one_or_none()
+            if appointment:
+                appointment.status = AppointmentStatus.no_show
+        
         # Recalculate positions
         await self._recalculate_positions(entry.location_id)
         

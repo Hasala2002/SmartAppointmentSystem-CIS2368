@@ -18,6 +18,7 @@ self.addEventListener('activate', (event) => {
 // Push notification handler
 self.addEventListener('push', (event) => {
   console.log('[SW] Push received:', event)
+  console.log('[SW] Has data:', !!event.data)
 
   let data = {
     title: 'Lone Star Dental',
@@ -27,10 +28,16 @@ self.addEventListener('push', (event) => {
 
   if (event.data) {
     try {
-      data = event.data.json()
+      const rawText = event.data.text()
+      console.log('[SW] Raw push data:', rawText)
+      data = JSON.parse(rawText)
+      console.log('[SW] Parsed data:', data)
     } catch (e) {
+      console.error('[SW] Failed to parse push data:', e)
       data.body = event.data.text()
     }
+  } else {
+    console.log('[SW] No data in push event, using defaults')
   }
 
   const options = {
@@ -56,8 +63,17 @@ self.addEventListener('push', (event) => {
     renotify: true
   }
 
+  console.log('[SW] Showing notification with title:', data.title)
+  console.log('[SW] Notification options:', options)
+
   event.waitUntil(
     self.registration.showNotification(data.title, options)
+      .then(() => {
+        console.log('[SW] ✓ Notification shown successfully')
+      })
+      .catch((error) => {
+        console.error('[SW] ✗ Failed to show notification:', error)
+      })
   )
 })
 

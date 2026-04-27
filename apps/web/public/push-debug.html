@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Push Notification Debug</title>
+    <style>
+        body { font-family: monospace; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .good { color: green; }
+        .bad { color: red; }
+        button { padding: 10px; margin: 5px; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔔 Push Notification Debug</h1>
+    
+    <div class="section">
+        <h2>Environment</h2>
+        <div id="env"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Support Check</h2>
+        <div id="support"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Service Worker</h2>
+        <div id="sw-status"></div>
+        <button onclick="registerSW()">Register Service Worker</button>
+        <button onclick="unregisterSW()">Unregister All</button>
+    </div>
+    
+    <div class="section">
+        <h2>Push Subscription</h2>
+        <div id="push-status"></div>
+        <button onclick="checkSubscription()">Check Subscription</button>
+    </div>
+    
+    <div class="section">
+        <h2>Actions</h2>
+        <button onclick="requestPermission()">Request Permission</button>
+        <button onclick="testLocalNotification()">Test Local Notification</button>
+    </div>
+    
+    <div class="section">
+        <h2>Logs</h2>
+        <pre id="logs"></pre>
+    </div>
+
+    <script>
+        const log = (msg) => {
+            const logs = document.getElementById('logs');
+            logs.textContent += `[${new Date().toISOString()}] ${msg}\n`;
+            console.log(msg);
+        };
+
+        // Environment info
+        document.getElementById('env').innerHTML = `
+            <strong>Origin:</strong> ${window.location.origin}<br>
+            <strong>Protocol:</strong> ${window.location.protocol}<br>
+            <strong>User Agent:</strong> ${navigator.userAgent}
+        `;
+
+        // Support check
+        const hasServiceWorker = 'serviceWorker' in navigator;
+        const hasPushManager = 'PushManager' in window;
+        const hasNotification = 'Notification' in window;
+        
+        document.getElementById('support').innerHTML = `
+            <div class="${hasServiceWorker ? 'good' : 'bad'}">Service Workers: ${hasServiceWorker ? '✓' : '✗'}</div>
+            <div class="${hasPushManager ? 'good' : 'bad'}">Push Manager: ${hasPushManager ? '✓' : '✗'}</div>
+            <div class="${hasNotification ? 'good' : 'bad'}">Notifications: ${hasNotification ? '✓' : '✗'}</div>
+            <div>Permission: ${Notification.permission}</div>
+        `;
+
+        async function registerSW() {
+            try {
+                log('Registering service worker...');
+                const reg = await navigator.serviceWorker.register('/sw-push.js', { scope: '/' });
+                log(`✓ Service worker registered: ${reg.scope}`);
+                await navigator.serviceWorker.ready;
+                log('✓ Service worker ready');
+                checkSWStatus();
+            } catch (err) {
+                log(`✗ Registration failed: ${err.message}`);
+            }
+        }
+
+        async function unregisterSW() {
+            try {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                log(`Found ${regs.length} service worker(s)`);
+                for (const reg of regs) {
+                    await reg.unsubscribe();
+                    await reg.unregister();
+                    log(`✓ Unregistered: ${reg.scope}`);
+                }
+                checkSWStatus();
+            } catch (err) {
+                log(`✗ Unregister failed: ${err.message}`);
+            }
+        }
+
+        async function checkSWStatus() {
+            try {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                let html = `<strong>Registered workers:</strong> ${regs.length}<br>`;
+                for (const reg of regs) {
+                    html += `<div style="margin-left: 20px;">
+                        Scope: ${reg.scope}<br>
+                        Active: ${reg.active ? '✓' : '✗'}<br>
+                        Installing: ${reg.installing ? '...' : '-'}<br>
+                        Waiting: ${reg.waiting ? '...' : '-'}
+                    </div>`;
+                }
+                document.getElementById('sw-status').innerHTML = html;
+            } catch (err) {
+                document.getElementById('sw-status').innerHTML = `Error: ${err.message}`;
+            }
+        }
+
+        async function checkSubscription() {
+            try {
+                log('Checking subscription...');
+                const reg = await navigator.serviceWorker.ready;
+                const sub = await reg.pushManager.getSubscription();
+                
+                let html = '';
+                if (sub) {
+                    html = `<div class="good">✓ Subscribed</div>`;
+                    html += `<div style="margin-left: 20px;">
+                        <strong>Endpoint:</strong> ${sub.endpoint.substring(0, 80)}...<br>
+                        <strong>Keys:</strong> ${sub.options && sub.options.applicationServerKey ? 'Present' : 'Missing'}
+                    </div>`;
+                    log('✓ Has active subscription');
+                } else {
+                    html = `<div class="bad">✗ Not subscribed</div>`;
+                    log('✗ No active subscription');
+                }
+                document.getElementById('push-status').innerHTML = html;
+            } catch (err) {
+                document.getElementById('push-status').innerHTML = `Error: ${err.message}`;
+                log(`✗ Check failed: ${err.message}`);
+            }
+        }
+
+        async function requestPermission() {
+            try {
+                log('Requesting permission...');
+                const permission = await Notification.requestPermission();
+                log(`Permission: ${permission}`);
+                checkSWStatus();
+            } catch (err) {
+                log(`✗ Permission request failed: ${err.message}`);
+            }
+        }
+
+        async function testLocalNotification() {
+            if (Notification.permission !== 'granted') {
+                log('✗ Permission not granted');
+                return;
+            }
+            
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                await reg.showNotification('Test Notification', {
+                    body: 'This is a local test notification',
+                    icon: '/icon-192x192.png'
+                });
+                log('✓ Local notification shown');
+            } catch (err) {
+                log(`✗ Local notification failed: ${err.message}`);
+            }
+        }
+
+        // Initialize
+        checkSWStatus();
+        if (hasPushManager && hasServiceWorker) {
+            checkSubscription();
+        }
+    </script>
+</body>
+</html>

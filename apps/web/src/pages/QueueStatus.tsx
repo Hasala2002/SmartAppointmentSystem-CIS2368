@@ -15,6 +15,11 @@ import {
   Alert,
   Modal
 } from '@mantine/core'
+import { 
+  MdPeople, 
+  MdAccessTime, 
+  MdCheckCircle 
+} from 'react-icons/md'
 import { useAuth } from '../hooks/useAuth'
 import { useQueueWebSocket } from '../hooks/useQueueWebSocket'
 import { NotificationPrompt } from '../components/NotificationPrompt'
@@ -135,12 +140,12 @@ export const QueueStatus = () => {
       <Container size="sm" py="xl">
         <Paper p="xl" withBorder radius="lg" ta="center">
           <Stack align="center" gap="lg">
-            <span style={{ fontSize: 64 }}>👥</span>
+            <MdPeople style={{ fontSize: 64, color: 'var(--mantine-color-gray-5)' }} />
             <Title order={3}>Not in Queue</Title>
             <Text c="dimmed">
               You're not currently in any queue. Check in for your appointment or join as a walk-in.
             </Text>
-            <Group>
+            <Group justify="center">
               <Button variant="light" onClick={() => navigate('/dashboard')}>
                 View Appointments
               </Button>
@@ -218,7 +223,7 @@ export const QueueStatus = () => {
               <Group grow w="100%">
                 <Paper p="md" withBorder radius="md" ta="center">
                   <Stack gap="xs" align="center">
-                    <span style={{ fontSize: 24 }}>👥</span>
+                    <MdPeople style={{ fontSize: 32, color: 'var(--mantine-color-blue-6)' }} />
                     <Text size="2rem" fw={700}>{position}</Text>
                     <Text size="xs" c="dimmed">Position in Queue</Text>
                   </Stack>
@@ -226,7 +231,7 @@ export const QueueStatus = () => {
 
                 <Paper p="md" withBorder radius="md" ta="center">
                   <Stack gap="xs" align="center">
-                    <span style={{ fontSize: 24 }}>⏱️</span>
+                    <MdAccessTime style={{ fontSize: 32, color: 'var(--mantine-color-blue-6)' }} />
                     <Text size="2rem" fw={700}>~{waitMins}</Text>
                     <Text size="xs" c="dimmed">Minutes Wait</Text>
                   </Stack>
@@ -238,7 +243,7 @@ export const QueueStatus = () => {
             {isCalled && (
               <Alert 
                 color="green" 
-                icon={<span style={{ fontSize: 20 }}>✓</span>}
+                icon={<MdCheckCircle style={{ fontSize: 20 }} />}
                 title="Please proceed to the counter"
                 w="100%"
               >

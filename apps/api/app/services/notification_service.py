@@ -8,6 +8,12 @@ from typing import Optional, List
 from app.config import settings
 from app.models.push_subscription import PushSubscription
 from app.models.user import User
+from app.services.email import (
+    send_appointment_confirmation,
+    send_appointment_reminder,
+    send_appointment_cancellation,
+    send_queue_called_email
+)
 
 class NotificationService:
     def __init__(self, db: AsyncSession):
@@ -202,7 +208,12 @@ class NotificationService:
 # Standalone functions for use outside of request context
 
 async def send_queue_called_notification(db: AsyncSession, user_id: UUID, queue_number: str, location_name: str):
-    """Send notification when customer is called."""
+    """Send notification and email when customer is called."""
+    # Get user email and name
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    
+    # Send push notification
     service = NotificationService(db)
     await service.send_push_to_user(
         user_id=user_id,
@@ -211,6 +222,16 @@ async def send_queue_called_notification(db: AsyncSession, user_id: UUID, queue_
         url="/queue",
         data={"type": "queue_called", "queue_number": queue_number}
     )
+    
+    # Send email notification
+    if user and user.email:
+        patient_name = f"{user.first_name} {user.last_name}" if user.first_name else user.email
+        await send_queue_called_email(
+            to_email=user.email,
+            patient_name=patient_name,
+            queue_number=queue_number,
+            location_name=location_name
+        )
 
 async def send_almost_ready_notification(db: AsyncSession, user_id: UUID, position: int, queue_number: str):
     """Send notification when customer is almost up (1-2 people ahead)."""
@@ -224,8 +245,20 @@ async def send_almost_ready_notification(db: AsyncSession, user_id: UUID, positi
         data={"type": "almost_ready", "queue_number": queue_number, "position": position}
     )
 
-async def send_appointment_confirmed_notification(db: AsyncSession, user_id: UUID, date_str: str, time_str: str, location_name: str):
-    """Send notification when appointment is confirmed."""
+async def send_appointment_confirmed_notification(
+    db: AsyncSession, 
+    user_id: UUID, 
+    date_str: str, 
+    time_str: str, 
+    location_name: str,
+    appointment_type: str = "Dental Appointment"
+):
+    """Send notification and email when appointment is confirmed."""
+    # Get user email and name
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    
+    # Send push notification
     service = NotificationService(db)
     await service.send_push_to_user(
         user_id=user_id,
@@ -234,9 +267,32 @@ async def send_appointment_confirmed_notification(db: AsyncSession, user_id: UUI
         url="/dashboard",
         data={"type": "appointment_confirmed"}
     )
+    
+    # Send email confirmation
+    if user and user.email:
+        patient_name = f"{user.first_name} {user.last_name}" if user.first_name else user.email
+        await send_appointment_confirmation(
+            to_email=user.email,
+            patient_name=patient_name,
+            appointment_date=date_str,
+            appointment_time=time_str,
+            appointment_type=appointment_type,
+            doctor_name=location_name  # Using location name as doctor name for now
+        )
 
-async def send_appointment_reminder_notification(db: AsyncSession, user_id: UUID, time_str: str, location_name: str):
-    """Send reminder notification before appointment."""
+async def send_appointment_reminder_notification(
+    db: AsyncSession, 
+    user_id: UUID, 
+    date_str: str,
+    time_str: str, 
+    location_name: str
+):
+    """Send reminder notification and email before appointment."""
+    # Get user email and name
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    
+    # Send push notification
     service = NotificationService(db)
     await service.send_push_to_user(
         user_id=user_id,
@@ -245,9 +301,31 @@ async def send_appointment_reminder_notification(db: AsyncSession, user_id: UUID
         url="/dashboard",
         data={"type": "appointment_reminder"}
     )
+    
+    # Send email reminder
+    if user and user.email:
+        patient_name = f"{user.first_name} {user.last_name}" if user.first_name else user.email
+        await send_appointment_reminder(
+            to_email=user.email,
+            patient_name=patient_name,
+            appointment_date=date_str,
+            appointment_time=time_str,
+            doctor_name=location_name  # Using location name as doctor name for now
+        )
 
-async def send_appointment_cancelled_notification(db: AsyncSession, user_id: UUID, date_str: str, location_name: str):
-    """Send notification when appointment is cancelled."""
+async def send_appointment_cancelled_notification(
+    db: AsyncSession, 
+    user_id: UUID, 
+    date_str: str,
+    time_str: str,
+    location_name: str
+):
+    """Send notification and email when appointment is cancelled."""
+    # Get user email and name
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    
+    # Send push notification
     service = NotificationService(db)
     await service.send_push_to_user(
         user_id=user_id,
@@ -256,3 +334,13 @@ async def send_appointment_cancelled_notification(db: AsyncSession, user_id: UUI
         url="/dashboard",
         data={"type": "appointment_cancelled"}
     )
+    
+    # Send email cancellation notice
+    if user and user.email:
+        patient_name = f"{user.first_name} {user.last_name}" if user.first_name else user.email
+        await send_appointment_cancellation(
+            to_email=user.email,
+            patient_name=patient_name,
+            appointment_date=date_str,
+            appointment_time=time_str
+        )

@@ -197,9 +197,17 @@ export const usePushNotifications = () => {
         body: 'Push notifications are working!',
         url: '/dashboard'
       })
-      console.log('[Push] Test notification sent:', response.data)
-      alert('Test notification sent! Check your notifications.')
-      return true
+      console.log('[Push] Backend response:', response.data)
+      
+      const { sent, failed, expired } = response.data
+      if (sent > 0) {
+        alert(`✓ Notification sent to ${sent} device(s)! Check your notifications.${failed > 0 ? ` (${failed} failed)` : ''}`)
+      } else if (failed > 0) {
+        alert(`⚠ Failed to send to ${failed} device(s). Check console for details.`)
+      } else {
+        alert('⚠ No active subscriptions found. Make sure you enabled notifications first.')
+      }
+      return sent > 0
     } catch (err: any) {
       console.error('[Push] Error sending test notification:', err)
       const errorMsg = err.response?.data?.detail || err.message || 'Failed to send test notification'

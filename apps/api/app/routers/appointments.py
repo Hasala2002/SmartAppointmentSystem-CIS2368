@@ -15,6 +15,7 @@ from app.schemas.appointment import (
     RescheduleRequest,
     CancelRequest
 )
+from app.services.notification_service import send_appointment_confirmed_notification
 
 router = APIRouter(prefix="/api/v1/appointments", tags=["appointments"])
 
@@ -126,6 +127,21 @@ async def create_appointment(
     await db.refresh(appointment)
     
     location_name = location.name
+    
+    # Send confirmation notification and email
+    try:
+        await send_appointment_confirmed_notification(
+            db=db,
+            user_id=current_user.id,
+            date_str=scheduled_start.strftime("%B %d, %Y"),
+            time_str=scheduled_start.strftime("%I:%M %p"),
+            location_name=location_name,
+            appointment_type=request.notes or "Dental Appointment"
+        )
+    except Exception as e:
+        # Don't fail appointment creation if notification fails
+        print(f"Failed to send appointment confirmation: {e}")
+    
     return await _build_appointment_response(appointment, location_name, current_user)
 
 
@@ -279,6 +295,21 @@ async def reschedule_appointment(
     await db.refresh(appointment)
     
     location_name = await _get_location_name(appointment.location_id, db)
+    
+    # Send rescheduled confirmation notification and email
+    try:
+        await send_appointment_confirmed_notification(
+            db=db,
+            user_id=current_user.id,
+            date_str=request.scheduled_start.strftime("%B %d, %Y"),
+            time_str=request.scheduled_start.strftime("%I:%M %p"),
+            location_name=location_name,
+            appointment_type="Rescheduled Appointment"
+        )
+    except Exception as e:
+        # Don't fail reschedule if notification fails
+        print(f"Failed to send reschedule confirmation: {e}")
+    
     return await _build_appointment_response(appointment, location_name, current_user)
 
 
@@ -338,6 +369,7 @@ async def cancel_appointment(
     # Remove from queue if checked in
     from app.models.queue_entry import QueueEntry, QueueStatus
     from app.websocket.handlers import broadcast_queue_update
+    from app.services.notification_service import send_appointment_cancelled_notification
     
     queue_result = await db.execute(
         select(QueueEntry).where(
@@ -367,4 +399,18 @@ async def cancel_appointment(
     location_name = await _get_location_name(appointment.location_id, db)
     customer_result = await db.execute(select(User).where(User.id == appointment.customer_id))
     customer = customer_result.scalar_one_or_none()
+    
+    # Send cancellation notification and email
+    try:
+        await send_appointment_cancelled_notification(
+            db=db,
+            user_id=appointment.customer_id,
+            date_str=appointment.scheduled_start.strftime("%B %d, %Y"),
+            time_str=appointment.scheduled_start.strftime("%I:%M %p"),
+            location_name=location_name
+        )
+    except Exception as e:
+        # Don't fail cancellation if notification fails
+        print(f"Failed to send cancellation notification: {e}")
+    
     return await _build_appointment_response(appointment, location_name, customer)

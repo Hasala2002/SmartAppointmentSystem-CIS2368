@@ -18,6 +18,7 @@ export default defineConfig({
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
+        id: '/',
         icons: [
           {
             src: 'icon-72x72.png',
@@ -48,7 +49,7 @@ export default defineConfig({
             src: 'icon-192x192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any'
+            purpose: 'any maskable'
           },
           {
             src: 'icon-384x384.png',
@@ -96,7 +97,8 @@ export default defineConfig({
       'localhost',
       '127.0.0.1',
       '.ngrok-free.dev',
-      '.ngrok.io'
+      '.ngrok.io',
+      '.shares.zrok.io'
     ]
   },
 })
