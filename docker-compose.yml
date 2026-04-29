@@ -1,12 +1,9 @@
 # Coolify deployment for the Smart Appointment System.
 #
-# Domains are managed by Coolify via the SERVICE_FQDN_* magic variables.
-# Set these in the Coolify "Environment Variables" tab for the resource:
-#
+# Set in Coolify "Environment Variables":
 #   SERVICE_FQDN_API=https://smartappointmentapi.digitalocean.hasala.me
 #   SERVICE_FQDN_WEB=https://smartappointmentweb.digitalocean.hasala.me
 #   SERVICE_FQDN_ADMIN=https://smartappointmentadmin.digitalocean.hasala.me
-#
 #   DB_PASSWORD=<strong-password>
 #   JWT_SECRET_KEY=<long-random-secret>
 #
@@ -36,47 +33,39 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      # Coolify injects the FQDN here and wires Traefik to port 8000.
-      - SERVICE_FQDN_API_8000
-      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-appointmentdb}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
-      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
-      - APP_ENV=${APP_ENV:-production}
-      - DEBUG=${DEBUG:-false}
-      - CORS_ORIGINS=["https://smartappointmentweb.digitalocean.hasala.me","https://smartappointmentadmin.digitalocean.hasala.me"]
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=${DB_USER:-postgres}
+      SERVICE_FQDN_API_8000: ""
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-appointmentdb}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      APP_ENV: ${APP_ENV:-production}
+      DEBUG: ${DEBUG:-false}
+      CORS_ORIGINS: '["https://smartappointmentweb.digitalocean.hasala.me","https://smartappointmentadmin.digitalocean.hasala.me"]'
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
     depends_on:
       db:
         condition: service_healthy
     expose:
       - "8000"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
 
   web:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
       args:
-        # Vite inlines these at build time, so they must be the public HTTPS URLs.
         VITE_API_URL: https://smartappointmentapi.digitalocean.hasala.me/api/v1
         VITE_WS_URL: wss://smartappointmentapi.digitalocean.hasala.me
     restart: unless-stopped
     environment:
-      - SERVICE_FQDN_WEB_80
+      SERVICE_FQDN_WEB_80: ""
     expose:
       - "80"
     depends_on:
@@ -91,7 +80,7 @@ services:
         VITE_WS_URL: wss://smartappointmentapi.digitalocean.hasala.me
     restart: unless-stopped
     environment:
-      - SERVICE_FQDN_ADMIN_80
+      SERVICE_FQDN_ADMIN_80: ""
     expose:
       - "80"
     depends_on:
