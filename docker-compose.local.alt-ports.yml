@@ -1,0 +1,30 @@
+# Override file used together with docker-compose.local.yml when the default
+# host ports are already in use. It only overrides port mappings; everything
+# else (build context, env vars, networks, volumes, etc.) is inherited from
+# the base file.
+#
+# Usage:
+#   docker compose -f docker-compose.local.yml -f docker-compose.local.alt-ports.yml up -d --build
+#
+# Equivalent (and often simpler) approach: set the *_PORT env vars when
+# invoking docker compose against docker-compose.local.yml on its own, e.g.
+#
+#   DB_PORT=5433 API_PORT=8001 WEB_PORT=5175 ADMIN_PORT=5176 \
+#       docker compose -f docker-compose.local.yml up -d --build
+
+services:
+  db:
+    ports:
+      - "5433:5432"  # 5433 on host instead of 5432
+
+  api:
+    ports:
+      - "8001:8000"  # 8001 on host instead of 8000
+
+  web:
+    ports:
+      - "5175:80"    # 5175 on host instead of 5173
+
+  admin:
+    ports:
+      - "5176:80"    # 5176 on host instead of 5174

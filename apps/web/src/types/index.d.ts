@@ -71,10 +71,9 @@ export interface ApiAppointment {
     updated_at: string;
 }
 export interface PatientInfo {
-    dateOfBirth: string;
-    hasInsurance: 'yes' | 'no';
+    dentalInsuranceStatus: 'same_as_last' | 'changed' | 'no_insurance';
     lastDentalVisit: 'within-6-months' | '6-12-months' | 'over-a-year' | 'never';
-    hasDentalPain: 'yes' | 'no';
+    hasDentalPain: boolean;
     allergies?: string;
     additionalNotes?: string;
 }

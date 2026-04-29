@@ -47,9 +47,13 @@ export const useQueueWebSocket = (locationId: string | null) => {
       wsRef.current.close()
     }
 
-    // Use current host for WebSocket to support mobile testing
-    const wsHost = window.location.hostname
-    const wsUrl = `ws://${wsHost}:8000/ws/queue/${locationId}`
+    // WebSocket base URL is baked in at build time via VITE_WS_URL (passed as
+    // a Docker build arg from docker-compose.local.yml so it tracks API_PORT).
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    const wsBaseUrl =
+      import.meta.env.VITE_WS_URL ||
+      `${wsScheme}://${window.location.hostname}:8001`
+    const wsUrl = `${wsBaseUrl}/ws/queue/${locationId}`
     console.log('[WS Admin] Connecting to:', wsUrl)
 
     const ws = new WebSocket(wsUrl)

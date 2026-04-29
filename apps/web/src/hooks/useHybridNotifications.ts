@@ -39,7 +39,10 @@ export const useHybridNotifications = (userId?: string) => {
     if (!useFallback || !userId) return
 
     const connectWS = () => {
-      const wsBaseUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:8000`
+      const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
+      const wsBaseUrl =
+        import.meta.env.VITE_WS_URL ||
+        `${wsScheme}://${window.location.hostname}:8001`
       const wsUrl = `${wsBaseUrl}/ws/notifications/${userId}`
       
       console.log('[Hybrid] Connecting to notification WebSocket:', wsUrl)

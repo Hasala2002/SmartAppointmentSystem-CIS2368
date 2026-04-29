@@ -49,8 +49,12 @@ export const useQueueWebSocket = (locationId: string | null, customerId?: string
       wsRef.current.close()
     }
 
-    // Support ngrok WebSocket URL via environment variable
-    const wsBaseUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.hostname}:8000`
+    // WebSocket base URL is baked in at build time via VITE_WS_URL (passed as
+    // a Docker build arg from docker-compose.local.yml so it tracks API_PORT).
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    const wsBaseUrl =
+      import.meta.env.VITE_WS_URL ||
+      `${wsScheme}://${window.location.hostname}:8001`
     const wsUrl = `${wsBaseUrl}/ws/queue/${locationId}`
     console.log('[WS] Connecting to:', wsUrl)
 

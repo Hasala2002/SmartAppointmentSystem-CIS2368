@@ -1,7 +1,11 @@
 import axios from 'axios'
 
-// Support ngrok URL via environment variable, otherwise use current host
-const apiBaseURL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8000/api/v1`
+// API base URL is baked in at build time via VITE_API_URL (passed as a Docker
+// build arg from docker-compose.local.yml so it tracks API_PORT). The fallback
+// supports mobile testing on the LAN and ngrok-style tunnels.
+const apiBaseURL =
+  import.meta.env.VITE_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8001/api/v1`
 
 export const apiClient = axios.create({
   baseURL: apiBaseURL,

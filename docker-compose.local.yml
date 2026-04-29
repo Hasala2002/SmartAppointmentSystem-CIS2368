@@ -1,0 +1,116 @@
+# Local development stack for the Smart Appointment System.
+#
+# Host ports are parameterized via env vars so you can avoid conflicts with
+# anything already running on your machine without editing this file. Set the
+# overrides in .env or on the command line, e.g.:
+#
+#   WEB_PORT=5175 ADMIN_PORT=5176 docker compose -f docker-compose.local.yml up -d
+#
+# An override file (docker-compose.local.alt-ports.yml) is also provided for
+# convenience.
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: appointment-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-appointmentdb}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-appointmentdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - appointment-network
+
+  # FastAPI Backend
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: appointment-api
+    restart: unless-stopped
+    environment:
+      # Inside the compose network the API talks to Postgres on the service
+      # name `db`, not on the host port. Default to that DSN if no override is
+      # provided so a stale .env DATABASE_URL pointing elsewhere doesn't break
+      # the container.
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@db:5432/appointmentdb}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-key-change-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      APP_ENV: ${APP_ENV:-development}
+      DEBUG: ${DEBUG:-true}
+      # Quoted so the JSON brackets/commas don't confuse the YAML parser.
+      CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:5173","http://localhost:5174"]}'
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8000}:8000"
+    networks:
+      - appointment-network
+
+  # Web Frontend (Customer Portal)
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        # Vite inlines these into the static bundle at build time. They
+        # auto-derive from API_PORT so the bundle hits the right host port
+        # regardless of which port the API is mapped to. Override
+        # VITE_API_URL/VITE_WS_URL explicitly in .env if you're behind a
+        # tunnel (ngrok, cloudflared, etc.).
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:${API_PORT:-8000}/api/v1}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:${API_PORT:-8000}}
+    container_name: appointment-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-5173}:80"
+    depends_on:
+      - api
+    networks:
+      - appointment-network
+
+  # Admin Frontend
+  admin:
+    build:
+      context: ./apps/admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:${API_PORT:-8000}/api/v1}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:${API_PORT:-8000}}
+    container_name: appointment-admin
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_PORT:-5174}:80"
+    depends_on:
+      - api
+    networks:
+      - appointment-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  appointment-network:
+    driver: bridge

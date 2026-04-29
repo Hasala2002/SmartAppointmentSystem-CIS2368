@@ -1,8 +1,12 @@
 import axios from 'axios'
 
-// Use current host for API calls to support mobile testing
-const apiHost = window.location.hostname
-const apiBaseURL = `http://${apiHost}:8000/api/v1`
+// API base URL is baked in at build time via VITE_API_URL (passed as a Docker
+// build arg from docker-compose.local.yml so it tracks API_PORT). The fallback
+// keeps mobile testing on the LAN working when the API is on the host's
+// current address.
+const apiBaseURL =
+  import.meta.env.VITE_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:8001/api/v1`
 
 export const apiClient = axios.create({
   baseURL: apiBaseURL,

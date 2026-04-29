@@ -4,7 +4,7 @@ FROM node:18-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first to maximize Docker layer caching
 COPY package.json ./
 COPY yarn.lock* package-lock.json* ./
 
@@ -13,11 +13,22 @@ RUN if [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
     elif [ -f package-lock.json ]; then npm ci; \
     else npm install; fi
 
-# Copy application files
+# Copy application source
 COPY . .
 
-# Build the application
-RUN npm run build
+# Vite environment variables must be present at build time because they are
+# inlined into the static bundle. They're passed in via docker-compose so
+# they track whatever API_PORT the user has configured.
+ARG VITE_API_URL
+ARG VITE_WS_URL
+ENV VITE_API_URL=${VITE_API_URL} \
+    VITE_WS_URL=${VITE_WS_URL}
+
+# Build the static bundle. We pipe through grep to suppress the noisy
+# "exceeding the limit" warnings from vite-plugin-pwa, but we preserve a
+# non-zero exit code on real failures by checking the pipe status.
+RUN set -o pipefail 2>/dev/null || true; \
+    npx vite build 2>&1 | (grep -v "exceeding the limit" || true)
 
 # Production stage
 FROM nginx:alpine

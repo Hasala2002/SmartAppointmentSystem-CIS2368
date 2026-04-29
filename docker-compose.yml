@@ -1,109 +1,101 @@
-version: '3.8'
-
+# Coolify deployment for the Smart Appointment System.
+#
+# Domains are managed by Coolify via the SERVICE_FQDN_* magic variables.
+# Set these in the Coolify "Environment Variables" tab for the resource:
+#
+#   SERVICE_FQDN_API=https://smartappointmentapi.digitalocean.hasala.me
+#   SERVICE_FQDN_WEB=https://smartappointmentweb.digitalocean.hasala.me
+#   SERVICE_FQDN_ADMIN=https://smartappointmentadmin.digitalocean.hasala.me
+#
+#   DB_PASSWORD=<strong-password>
+#   JWT_SECRET_KEY=<long-random-secret>
+#
 services:
-  # PostgreSQL Database
   db:
     image: postgres:15-alpine
-    container_name: appointment-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: appointmentdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-appointmentdb}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-appointmentdb}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - appointment-network
 
-  # FastAPI Backend
   api:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
-    container_name: appointment-api
     restart: unless-stopped
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-super-secret-key-change-in-production}
-      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
-      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
-      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
-      APP_ENV: ${APP_ENV:-production}
-      DEBUG: ${DEBUG:-false}
-      CORS_ORIGINS: ${CORS_ORIGINS:-["https://${WEB_DOMAIN}","https://${ADMIN_DOMAIN}"]}
+      # Coolify injects the FQDN here and wires Traefik to port 8000.
+      - SERVICE_FQDN_API_8000
+      - DATABASE_URL=postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-appointmentdb}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      - APP_ENV=${APP_ENV:-production}
+      - DEBUG=${DEBUG:-false}
+      - CORS_ORIGINS=["https://smartappointmentweb.digitalocean.hasala.me","https://smartappointmentadmin.digitalocean.hasala.me"]
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
     depends_on:
       db:
         condition: service_healthy
-    networks:
-      - appointment-network
+    expose:
+      - "8000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
       interval: 30s
-      timeout: 10s
-      retries: 3
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  # Web Frontend (Customer Portal)
   web:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
-    container_name: appointment-web
+      args:
+        # Vite inlines these at build time, so they must be the public HTTPS URLs.
+        VITE_API_URL: https://smartappointmentapi.digitalocean.hasala.me/api/v1
+        VITE_WS_URL: wss://smartappointmentapi.digitalocean.hasala.me
     restart: unless-stopped
     environment:
-      VITE_API_URL: https://${API_DOMAIN}
-    networks:
-      - appointment-network
+      - SERVICE_FQDN_WEB_80
+    expose:
+      - "80"
+    depends_on:
+      - api
 
-  # Admin Frontend
   admin:
     build:
       context: ./apps/admin
       dockerfile: Dockerfile
-    container_name: appointment-admin
+      args:
+        VITE_API_URL: https://smartappointmentapi.digitalocean.hasala.me/api/v1
+        VITE_WS_URL: wss://smartappointmentapi.digitalocean.hasala.me
     restart: unless-stopped
     environment:
-      VITE_API_URL: https://${API_DOMAIN}
-    networks:
-      - appointment-network
-
-  # Caddy Reverse Proxy
-  caddy:
-    image: caddy:2-alpine
-    container_name: appointment-caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"  # HTTP/3
-    environment:
-      API_DOMAIN: ${API_DOMAIN}
-      WEB_DOMAIN: ${WEB_DOMAIN}
-      ADMIN_DOMAIN: ${ADMIN_DOMAIN}
-      ACME_EMAIL: ${ACME_EMAIL}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - SERVICE_FQDN_ADMIN_80
+    expose:
+      - "80"
     depends_on:
       - api
-      - web
-      - admin
-    networks:
-      - appointment-network
 
 volumes:
   postgres_data:
-    driver: local
-  caddy_data:
-    driver: local
-  caddy_config:
-    driver: local
-
-networks:
-  appointment-network:
-    driver: bridge

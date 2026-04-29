@@ -9,10 +9,9 @@ import { useEffect, useState } from 'react'
 import { listAppointmentsRequest, mapApiAppointment } from '../api/appointments'
 
 const DEFAULT_PATIENT_INFO: PatientInfo = {
-  dateOfBirth: '',
-  hasInsurance: 'no',
+  dentalInsuranceStatus: 'no_insurance',
   lastDentalVisit: 'never',
-  hasDentalPain: 'no',
+  hasDentalPain: false,
 }
 
 export const Dashboard = () => {

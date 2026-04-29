@@ -125,7 +125,7 @@ export const Landing = () => {
               Experience gentle, personalized dental care for the whole family.
             </Text>
 
-            <Group gap="md" mt="md" wrap justify="center">
+            <Group gap="md" mt="md" wrap="wrap" justify="center">
               <Button
                 size="xl"
                 color="white"
