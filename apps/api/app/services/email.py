@@ -1,19 +1,13 @@
-import aiosmtplib
-from email.message import EmailMessage
+import resend
 from app.config import settings
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def _smtp_configured() -> bool:
-    """Return True only when all required SMTP credentials are present."""
-    return bool(
-        settings.SMTP_HOST
-        and settings.SMTP_USER
-        and settings.SMTP_PASSWORD
-        and settings.SMTP_FROM_EMAIL
-    )
+def _resend_configured() -> bool:
+    """Return True only when a Resend API key is present."""
+    return bool(settings.RESEND_API_KEY)
 
 
 async def send_email(
@@ -23,47 +17,33 @@ async def send_email(
     html_body: str = None
 ):
     """
-    Send an email via SMTP (STARTTLS on port 587).
+    Send an email via the Resend API (HTTPS – works on DigitalOcean and any
+    other host that blocks outbound SMTP ports 25 / 465 / 587).
 
-    Returns True on success, False on failure or when SMTP is not configured.
-    Credentials are read exclusively from environment variables – never from a
-    hard-coded .env file inside the container.
+    Returns True on success, False on failure or when unconfigured.
+    Set RESEND_API_KEY and RESEND_FROM_EMAIL in the environment to enable.
     """
-    if not _smtp_configured():
+    if not _resend_configured():
         logger.warning(
-            "SMTP is not configured (SMTP_HOST / SMTP_USER / SMTP_PASSWORD / "
-            "SMTP_FROM_EMAIL are not all set). Skipping email to %s.", to_email
+            "Resend is not configured (RESEND_API_KEY is not set). "
+            "Skipping email to %s.", to_email
         )
         return False
 
     try:
-        message = EmailMessage()
-        message["From"] = settings.SMTP_FROM_EMAIL
-        message["To"] = to_email
-        message["Subject"] = subject
+        resend.api_key = settings.RESEND_API_KEY
 
-        # Plain-text fallback is always set first
-        message.set_content(body)
+        params: resend.Emails.SendParams = {
+            "from": settings.RESEND_FROM_EMAIL,
+            "to": [to_email],
+            "subject": subject,
+            "text": body,
+        }
 
-        # Attach the richer HTML alternative when provided
         if html_body:
-            message.add_alternative(html_body, subtype="html")
+            params["html"] = html_body
 
-        # TLS mode is driven by SMTP_USE_TLS / SMTP_PORT env vars:
-        #   Port 587 + SMTP_USE_TLS=false → STARTTLS (connect plain, upgrade)
-        #   Port 465 + SMTP_USE_TLS=true  → implicit SSL (connect already TLS)
-        use_tls = settings.SMTP_USE_TLS
-        start_tls = not use_tls  # STARTTLS only when NOT doing implicit TLS
-
-        await aiosmtplib.send(
-            message,
-            hostname=settings.SMTP_HOST,
-            port=settings.SMTP_PORT,
-            username=settings.SMTP_USER,
-            password=settings.SMTP_PASSWORD,
-            use_tls=use_tls,
-            start_tls=start_tls,
-        )
+        resend.Emails.send(params)
 
         logger.info("Email sent successfully to %s", to_email)
         return True

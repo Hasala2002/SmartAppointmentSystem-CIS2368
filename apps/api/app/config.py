@@ -33,20 +33,15 @@ class Settings(BaseSettings):
     VAPID_EMAIL: str = "mailto:admin@lonestardental.com"
 
     # ------------------------------------------------------------------ #
-    # SMTP – Email Notifications                                           #
-    # All four credential fields must be non-empty for emails to be sent. #
-    # Leave them blank (or omit from env) to silently skip email sending. #
-    #                                                                      #
-    # Port / TLS cheat-sheet:                                             #
-    #   587  STARTTLS  → SMTP_PORT=587  SMTP_USE_TLS=false  (default)    #
-    #   465  SSL/TLS   → SMTP_PORT=465  SMTP_USE_TLS=true               #
+    # Resend – Email Notifications                                         #
+    # Uses HTTPS so it works on hosts that block SMTP ports (e.g. DO).   #
+    # Sign up at https://resend.com, get an API key, verify your domain. #
+    # Leave RESEND_API_KEY blank to silently skip email sending.          #
     # ------------------------------------------------------------------ #
-    SMTP_HOST: str = "smtp.gmail.com"
-    SMTP_PORT: int = 587
-    SMTP_USE_TLS: bool = False   # True = implicit SSL (port 465)
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    SMTP_FROM_EMAIL: str = ""
+    RESEND_API_KEY: str = ""
+    # Must match a verified sender domain/address in your Resend account.
+    # On the free plan you can use: onboarding@resend.dev for testing.
+    RESEND_FROM_EMAIL: str = "onboarding@resend.dev"
 
     # ------------------------------------------------------------------ #
     # Helpers                                                              #
@@ -57,13 +52,8 @@ class Settings(BaseSettings):
 
     @property
     def smtp_enabled(self) -> bool:
-        """True only when every required SMTP credential is present."""
-        return bool(
-            self.SMTP_HOST
-            and self.SMTP_USER
-            and self.SMTP_PASSWORD
-            and self.SMTP_FROM_EMAIL
-        )
+        """True only when Resend is configured."""
+        return bool(self.RESEND_API_KEY)
 
     class Config:
         # pydantic-settings reads env vars directly; the .env file is only a

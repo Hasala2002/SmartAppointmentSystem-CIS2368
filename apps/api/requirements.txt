@@ -13,4 +13,4 @@ email-validator==2.1.0
 python-dotenv==1.0.0
 websockets==12.0
 pywebpush==1.14.1
-aiosmtplib==3.0.1
+resend==2.4.0
