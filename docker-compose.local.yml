@@ -57,8 +57,11 @@ services:
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_EMAIL: ${VAPID_EMAIL:-mailto:admin@lonestardental.com}
       # SMTP – all four must be set for emails to send; blank = skip silently
+      # Port 587 + SMTP_USE_TLS=false → STARTTLS (default, Gmail)
+      # Port 465 + SMTP_USE_TLS=true  → implicit SSL (if host blocks 587)
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-false}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}

@@ -49,18 +49,20 @@ async def send_email(
         if html_body:
             message.add_alternative(html_body, subtype="html")
 
-        # Connect with STARTTLS (plain connection upgraded to TLS).
-        # use_tls=False means we do NOT try an implicit TLS handshake on
-        # connect; start_tls=True tells aiosmtplib to issue STARTTLS after
-        # the initial greeting, which is the standard for port 587.
+        # TLS mode is driven by SMTP_USE_TLS / SMTP_PORT env vars:
+        #   Port 587 + SMTP_USE_TLS=false → STARTTLS (connect plain, upgrade)
+        #   Port 465 + SMTP_USE_TLS=true  → implicit SSL (connect already TLS)
+        use_tls = settings.SMTP_USE_TLS
+        start_tls = not use_tls  # STARTTLS only when NOT doing implicit TLS
+
         await aiosmtplib.send(
             message,
             hostname=settings.SMTP_HOST,
             port=settings.SMTP_PORT,
             username=settings.SMTP_USER,
             password=settings.SMTP_PASSWORD,
-            use_tls=False,
-            start_tls=True,
+            use_tls=use_tls,
+            start_tls=start_tls,
         )
 
         logger.info("Email sent successfully to %s", to_email)

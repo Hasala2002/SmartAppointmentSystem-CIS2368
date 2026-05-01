@@ -34,11 +34,16 @@ class Settings(BaseSettings):
 
     # ------------------------------------------------------------------ #
     # SMTP – Email Notifications                                           #
-    # All four fields must be non-empty for emails to be sent.            #
+    # All four credential fields must be non-empty for emails to be sent. #
     # Leave them blank (or omit from env) to silently skip email sending. #
+    #                                                                      #
+    # Port / TLS cheat-sheet:                                             #
+    #   587  STARTTLS  → SMTP_PORT=587  SMTP_USE_TLS=false  (default)    #
+    #   465  SSL/TLS   → SMTP_PORT=465  SMTP_USE_TLS=true               #
     # ------------------------------------------------------------------ #
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
+    SMTP_USE_TLS: bool = False   # True = implicit SSL (port 465)
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
