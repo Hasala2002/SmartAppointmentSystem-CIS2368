@@ -6,6 +6,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _smtp_configured() -> bool:
+    """Return True only when all required SMTP credentials are present."""
+    return bool(
+        settings.SMTP_HOST
+        and settings.SMTP_USER
+        and settings.SMTP_PASSWORD
+        and settings.SMTP_FROM_EMAIL
+    )
+
+
 async def send_email(
     to_email: str,
     subject: str,
@@ -13,42 +23,51 @@ async def send_email(
     html_body: str = None
 ):
     """
-    Send an email using Gmail SMTP
-    
-    Args:
-        to_email: Recipient email address
-        subject: Email subject
-        body: Plain text email body
-        html_body: Optional HTML email body
+    Send an email via SMTP (STARTTLS on port 587).
+
+    Returns True on success, False on failure or when SMTP is not configured.
+    Credentials are read exclusively from environment variables – never from a
+    hard-coded .env file inside the container.
     """
+    if not _smtp_configured():
+        logger.warning(
+            "SMTP is not configured (SMTP_HOST / SMTP_USER / SMTP_PASSWORD / "
+            "SMTP_FROM_EMAIL are not all set). Skipping email to %s.", to_email
+        )
+        return False
+
     try:
         message = EmailMessage()
         message["From"] = settings.SMTP_FROM_EMAIL
         message["To"] = to_email
         message["Subject"] = subject
-        
-        # Set plain text content
+
+        # Plain-text fallback is always set first
         message.set_content(body)
-        
-        # Add HTML content if provided
+
+        # Attach the richer HTML alternative when provided
         if html_body:
             message.add_alternative(html_body, subtype="html")
-        
-        # Send the email
+
+        # Connect with STARTTLS (plain connection upgraded to TLS).
+        # use_tls=False means we do NOT try an implicit TLS handshake on
+        # connect; start_tls=True tells aiosmtplib to issue STARTTLS after
+        # the initial greeting, which is the standard for port 587.
         await aiosmtplib.send(
             message,
             hostname=settings.SMTP_HOST,
             port=settings.SMTP_PORT,
             username=settings.SMTP_USER,
             password=settings.SMTP_PASSWORD,
+            use_tls=False,
             start_tls=True,
         )
-        
-        logger.info(f"Email sent successfully to {to_email}")
+
+        logger.info("Email sent successfully to %s", to_email)
         return True
-        
+
     except Exception as e:
-        logger.error(f"Failed to send email to {to_email}: {str(e)}")
+        logger.error("Failed to send email to %s: %s", to_email, str(e))
         return False
 
 

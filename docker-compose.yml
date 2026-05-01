@@ -41,8 +41,13 @@ services:
       REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
       APP_ENV: ${APP_ENV:-production}
       DEBUG: ${DEBUG:-false}
-      CORS_ORIGINS: '["https://smartappointmentweb.digitalocean.hasala.me","https://smartappointmentadmin.digitalocean.hasala.me"]'
-      SMTP_HOST: ${SMTP_HOST:-}
+      CORS_ORIGINS: '${CORS_ORIGINS:-["https://smartappointmentweb.digitalocean.hasala.me","https://smartappointmentadmin.digitalocean.hasala.me"]}'
+      # VAPID – leave blank to disable push notifications without crashing
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-mailto:admin@lonestardental.com}
+      # SMTP – all four must be set for emails to send; blank = skip silently
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}

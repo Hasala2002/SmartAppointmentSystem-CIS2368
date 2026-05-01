@@ -52,7 +52,12 @@ services:
       DEBUG: ${DEBUG:-true}
       # Quoted so the JSON brackets/commas don't confuse the YAML parser.
       CORS_ORIGINS: '${CORS_ORIGINS:-["http://localhost:5173","http://localhost:5174"]}'
-      SMTP_HOST: ${SMTP_HOST:-}
+      # VAPID – leave blank to disable push notifications without crashing
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_EMAIL: ${VAPID_EMAIL:-mailto:admin@lonestardental.com}
+      # SMTP – all four must be set for emails to send; blank = skip silently
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
