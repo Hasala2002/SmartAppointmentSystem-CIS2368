@@ -8,7 +8,7 @@ A full-stack appointment booking and queue management system.
 | -------- | -------------------------------- |
 | Frontend | React, TypeScript, Mantine, Vite |
 | Backend  | Python, FastAPI                  |
-| Database | PostgreSQL (AWS RDS)             |
+| Database | PostgreSQL                       |
 | Monorepo | Turborepo                        |
 
 ## Getting Started
